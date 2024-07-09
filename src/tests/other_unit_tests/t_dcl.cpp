@@ -23,11 +23,9 @@ namespace DynaPlex::Tests {
 			}));
 
 		DynaPlex::MDP mdp = dp.GetMDP(config);
-
 		
 
 		auto policy = mdp->GetPolicy("base_stock");
-
 
 
 		//configuration of neural network training:
@@ -48,7 +46,6 @@ namespace DynaPlex::Tests {
 			{"silent",true }//to ensure that DCL does not write any output to console				
 		};
 		DynaPlex::Algorithms::DCL dcl = dp.GetDCL(mdp, policy, dcl_config);
-
 
 		if (DynaPlex::TorchAvailability::TorchAvailable())
 		{

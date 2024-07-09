@@ -15,10 +15,19 @@ namespace DynaPlex::Models {
 	namespace perishable_systems {
 		void Register(DynaPlex::Registry&);
 	}
+	namespace probsp {
+		void Register(DynaPlex::Registry&);
+	}
+	namespace probsp_multiple {
+		void Register(DynaPlex::Registry&);
+	}
 	void RegistrationManager::RegisterAll(DynaPlex::Registry& registry) {
 		lost_sales::Register(registry);
 		bin_packing::Register(registry);
 		order_picking::Register(registry);
 		perishable_systems::Register(registry);
+		probsp::Register(registry);
+		probsp_multiple::Register(registry);
+
 	}
 }

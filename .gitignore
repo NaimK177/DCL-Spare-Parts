@@ -28,3 +28,6 @@ bld/
 /CMakeUserPresets.json
 poetry*.lock
 /docs/build/
+/out
+/IO_DynaPlex
+/libtorch
