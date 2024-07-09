@@ -25,12 +25,23 @@ namespace DynaPlex::Models {
 
 		int64_t BaseStockPolicy::GetAction(const MDP::State& state) const
 		{
-			int to_order = base_stock_level - state.outstanding_orders - state.inventory_level;
-			if (to_order < 0)
+			if (base_stock_level > 0)
 			{
-				throw DynaPlex::Error("Cannot order negative amount of spare parts");
+				int to_order = base_stock_level - state.outstanding_orders - state.inventory_level;
+				if (to_order < 0)
+				{
+					std::cout << "Error in the BSP" << std::endl;
+					std::cout << "BSP level=" << base_stock_level << ", O=" << state.outstanding_orders << ", I=" << state.inventory_level << std::endl;
+					throw DynaPlex::Error("Cannot order negative amount of spare parts");
+				}
+				return to_order;
 			}
-			return to_order;
+			else 
+			{
+				return 0;
+			}
+			
+			
 		}
 	}
 }

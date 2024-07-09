@@ -37,7 +37,7 @@ int main() {
         DynaPlex::MDP different_mdp = dp.GetMDP(mdp_vars_from_json);
 
         //we can also input the rule_based policy here, if you defined it before.
-        auto policy = mdp->GetPolicy("DoNothingPolicy");
+        auto policy = mdp->GetPolicy("BaseStockPolicy");
 
         //set several DCL parameters
         // As for the termination criterion, we employ an early stopping strategy, which serves as a potent regularization technique by preventing overfitting 

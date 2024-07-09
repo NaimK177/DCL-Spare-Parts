@@ -29,8 +29,6 @@ namespace DynaPlex::Models {
 				int64_t inventory_level;
 				int64_t outstanding_orders;
 
-				State() : degradation(1) {}
-
 				//using this is recommended:
 				DynaPlex::StateCategory cat;
 				DynaPlex::VarGroup ToVarGroup() const;
@@ -44,7 +42,7 @@ namespace DynaPlex::Models {
 				
 				std::vector<double> Increments;
 
-				Event() : arrivals_array(1), Increments(1) {}
+				Event() : arrivals_array(100), Increments(100) {}
 				
 			};
 			//using Event = int64_t;

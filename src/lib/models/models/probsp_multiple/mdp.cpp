@@ -115,6 +115,7 @@ namespace DynaPlex::Models {
 		{			
 
 			State state{};
+			state.degradation=std::vector<double> (number_machines);
 			//state.degradation.resize(number_machines);
 			//state.cat = StateCategory::AwaitEvent();//or AwaitAction(), depending on logic
 			state.cat = StateCategory::AwaitAction();
