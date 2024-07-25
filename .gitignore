@@ -31,3 +31,5 @@ poetry*.lock
 /out
 /IO_DynaPlex
 /libtorch
+CMakePresets.json
+src/lib/models/models/probsp_multiple/mdp-Naim’s MacBook Pro 2.cpp

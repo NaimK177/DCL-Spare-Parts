@@ -24,20 +24,38 @@ int main() {
 
     //initialize
         auto& dp = DynaPlexProvider::Get();
-        std::string model_name = "probsp_multiple";
-        std::string mdp_config_name = "mdp_config_0.json";
+        //std::string model_name = "probsp_multiple";
+        //std::string mdp_config_name = "mdp_config_0.json";
         //Get path to IO_DynaPlex/mdp_config_examples/airplane_mdp/mdp_config_name:
-        std::string file_path = dp.System().filepath("mdp_config_examples", model_name, mdp_config_name);
-        auto mdp_vars_from_json = DynaPlex::VarGroup::LoadFromFile(file_path);
-        auto mdp = dp.GetMDP(mdp_vars_from_json);
+        //std::string file_path = dp.System().filepath("mdp_config_examples", model_name, mdp_config_name);
+        //auto mdp_vars_from_json = DynaPlex::VarGroup::LoadFromFile(file_path);
+       
+        // Use VarGroup instead of the json file
+
+        DynaPlex::VarGroup mdp_config;
+        mdp_config.Add("id", "probsp_multiple");
+        mdp_config.Add("discount_factor", 0.99);
+        mdp_config.Add("number_machines", 30);
+        mdp_config.Add("holding_cost", 1);
+        mdp_config.Add("emergency_cost", 5);
+        mdp_config.Add("lead_time_p", 0.33);
+        mdp_config.Add("degradation_mttf", 20);
+        mdp_config.Add("degradation_a", 5);
+
+        
+        auto mdp = dp.GetMDP(mdp_config);
 
 
         //for illustration purposes, create a different mdp
         //that is compatible with the first - same number of features, same number of valid actions:
-        DynaPlex::MDP different_mdp = dp.GetMDP(mdp_vars_from_json);
+        //DynaPlex::MDP different_mdp = dp.GetMDP(mdp_vars_from_json);
 
         //we can also input the rule_based policy here, if you defined it before.
-        auto policy = mdp->GetPolicy("BaseStockPolicy");
+
+        DynaPlex::VarGroup policy_config;
+        policy_config.Add("id", "BaseStockPolicy");
+        policy_config.Add("base_stock_level", 2);
+        auto policy = mdp->GetPolicy("DoNothingPolicy");
 
         //set several DCL parameters
         // As for the termination criterion, we employ an early stopping strategy, which serves as a potent regularization technique by preventing overfitting 
@@ -52,21 +70,23 @@ int main() {
 
         DynaPlex::VarGroup nn_architecture{
                 {"type","mlp"},
-                {"hidden_layers",DynaPlex::VarGroup::Int64Vec{64,64}}
+                {"hidden_layers",DynaPlex::VarGroup::Int64Vec{256,256}}
         };
-        int64_t num_gens = 2;
+        int64_t num_gens = 4;
         DynaPlex::VarGroup dcl_config{
                 //just for illustration, so we collect only little data, so DCL will run fast but will not perform well.
                 {"num_gens",num_gens},
-                {"N",200}, // Number of states to be collected (samples from the state space and we evaluate the Q for these states)
+                {"N",400000}, // Number of states to be collected (samples from the state space and we evaluate the Q for these states)
                 // The NN then approximate the other states from these states
-                {"M",500}, // Number of exogenous scenarios/(s,a) pair
-                {"H",200}, // Depth of Rollout (finite horizon to evaluate the state actions values under the different exogenous scenarios)
-                {"L", 5000}, // Warmup Period Length
+                {"M",100}, // Number of exogenous scenarios/(s,a) pair
+                {"H",10}, // Depth of Rollout (finite horizon to evaluate the state actions values under the different exogenous scenarios)
+                {"L", 2000}, // Warmup Period Length
                 
                 {"nn_architecture",nn_architecture},
                 {"nn_training",nn_training},
-                {"retrain_lastgen_only",false}
+                {"retrain_lastgen_only",false},
+
+                {"enable_sequential_halving", true}
         };
 
         try
@@ -74,10 +94,8 @@ int main() {
                 //Create a trainer for the mdp, with appropriate configuratoin.
                 auto dcl = dp.GetDCL(mdp, policy, dcl_config);
                 //this trains the policy, and saves it to disk.
-                std::cout << "Running dcl.TrainPolicy()" << std::endl;
                 dcl.TrainPolicy();
                 
-                std::cout << "Finished dcl.TrainPolicy()" << std::endl;
                 //using a dcl instance that has same parameterization (i.e. same dcl_config, same mdp), we may recover the trained polciies.
                 //This gets the policy that was trained last:
                 //auto policy = dcl.GetPolicy();
@@ -88,12 +106,13 @@ int main() {
                 //This gets all trained policy, as well as the initial policy, in a vector:
                 auto policies = dcl.GetPolicies();
 
-                // DynaPlex::VarGroup test_config;
-                // test_config.Add("number_of_trajectories", 100);
-	        // test_config.Add("periods_per_trajectory", 10000);
+                DynaPlex::VarGroup test_config;
+                test_config.Add("number_of_trajectories", 1000);
+	        test_config.Add("periods_per_trajectory", 10000);
+                test_config.Add("warmup_periods", 2000);
 
                 //Compare the various trained policies:
-                auto comparer = dp.GetPolicyComparer(mdp);
+                auto comparer = dp.GetPolicyComparer(mdp, test_config);
                 auto comparison = comparer.Compare(policies);
                 for (auto& VarGroup : comparison)
                 {
@@ -117,11 +136,10 @@ int main() {
                 //Even possible to load the policy trained for one MDP, and make it applicable to another mdp:
                 //this however only works if the two policies have consistent input and output dimensions, i.e.
                 //same number of valid actions and same number of features.
-                auto different_policy = dp.LoadPolicy(different_mdp, path);
+                //auto different_policy = dp.LoadPolicy(different_mdp, path);
         }
         catch (const std::exception& e)
         {
-                std::cout << "Went into the catch exception" << std::endl;
                 std::cout << "exception: " << e.what() << std::endl;
         }
     return 0;

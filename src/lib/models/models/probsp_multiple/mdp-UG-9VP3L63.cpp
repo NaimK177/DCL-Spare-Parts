@@ -29,7 +29,7 @@ namespace DynaPlex::Models {
 			// std::cout << "After Await Action" << std::endl;
 			
 			// receive incoming spare parts after action receival
-			int64_t ArrivedSpareParts = 0;
+			int ArrivedSpareParts = 0;
 			for (size_t i = 0; i < state.outstanding_orders; ++i)
 			{
 				ArrivedSpareParts = ArrivedSpareParts + event.arrivals_array[i];
@@ -100,10 +100,10 @@ namespace DynaPlex::Models {
 				std::cout << "M=" << number_machines << ", I=" << state.inventory_level << ", O=" << state.outstanding_orders << std::endl;
 				throw DynaPlex::Error("Model: Action violates capacity constraints");
 			}
-			if (state.inventory_level + state.outstanding_orders + action > number_machines)
+			if (state.inventory_level + state.outstanding_orders + action > 1)
 			{
 				std::cout << "A=" << action << ", I=" << state.inventory_level << ", and O=" << state.outstanding_orders << std::endl;
-				throw DynaPlex::Error("Model: A + I + O are greater than BSP Initial Level");
+				throw DynaPlex::Error("Model: A + I + O are greater than BSP(1)");
 			}
 			// std::cout << "Started Modify State with Action :" << action << std::endl;
 			// Update outstanding orders with the action
@@ -191,7 +191,6 @@ namespace DynaPlex::Models {
 			// TO ADD
 			// Add spare parts arrivals distribution
 			arrival_dist = DiscreteDist::GetCustomDist({1-lead_time_p, lead_time_p});
-			
 			// DynaPlex::DiscreteDist geometric_distribution = DiscreteDist::GetGeometricDist(lead_time_p);
 			std::cout << "M=" << number_machines << std::endl;
 			// Add degradation increments distribution
