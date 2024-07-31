@@ -467,9 +467,117 @@ void one_machines() {
 	}
 
 	file.close();
+}
 
+
+void thirty_machines() {
+	std::cout << "Running experiments with 30 machines" << std::endl;
+
+	std::ofstream file;
+	file.open("C:/Users/nalkhour/DynaPlex_IO/IO_DynaPlex/experiments/30machines.csv", std::ofstream::trunc);
+
+	file << "M, MTTF, a, lead_time, holding_cost, emergency_cost, cost \n";
+
+	file.close();
+	auto& dp = DynaPlexProvider::Get();
+
+	DynaPlex::VarGroup mdp_config;
+	mdp_config.Add("id", "probsp_multiple");
+	mdp_config.Add("discount_factor", 0.99);
+	mdp_config.Add("number_machines", 30);
+	mdp_config.Add("holding_cost", 1);
+	mdp_config.Add("emergency_cost", 5);
+	mdp_config.Add("lead_time_p", 0.33);
+	mdp_config.Add("degradation_mttf", 20);
+	mdp_config.Add("degradation_a", 5);
+
+	DynaPlex::VarGroup nn_training{
+		{"early_stopping_patience",20},
+		{"mini_batch_size", 32},
+		{"max_training_epochs", 100}
+	};
+
+	DynaPlex::VarGroup nn_architecture{
+		{"type","mlp"},
+		{"hidden_layers",DynaPlex::VarGroup::Int64Vec{256,256}}
+	};
+	int64_t num_gens = 4;
+	DynaPlex::VarGroup dcl_config{
+		//just for illustration, so we collect only little data, so DCL will run fast but will not perform well.
+		{"num_gens",num_gens},
+		{"N",500000}, // Number of states to be collected (samples from the state space and we evaluate the Q for these states)
+		// The NN then approximate the other states from these states
+		{"M",100}, // Number of exogenous scenarios/(s,a) pair
+		{"H",20}, // Depth of Rollout (finite horizon to evaluate the state actions values under the different exogenous scenarios)
+		{"L", 2000}, // Warmup Period Length
+		
+		{"nn_architecture",nn_architecture},
+		{"nn_training",nn_training},
+		{"retrain_lastgen_only",false},
+
+		{"enable_sequential_halving", true}
+	};
+
+	DynaPlex::VarGroup test_config;
+	test_config.Add("number_of_trajectories", 20);
+	test_config.Add("periods_per_trajectory", 10000);
+	test_config.Add("warmup_periods", 2000);
+
+	auto mdp = dp.GetMDP(mdp_config);
+
+	DynaPlex::VarGroup policy_config;
+	auto policy = mdp->GetPolicy("DoNothingPolicy");
+
+	std::vector<double> mttf_vector = {5.0, 10.0, 20.0};
+	std::vector<double> lead_time_p_vector = {1.0, 0.5, 0.33, 0.25, 0.2};
+	std::vector<double> degradation_a_vector = {1.0, 5.0};
+
+	mttf_vector = {5.0};
+	lead_time_p_vector = {1.0};
+	degradation_a_vector = {1.0};
+
+	for (double mttf : mttf_vector)
+	{
+		for (double lead_time_p : lead_time_p_vector)
+		{
+			for (double degradation_a : degradation_a_vector)
+			{
+				mdp_config.Set("lead_time_p", lead_time_p);
+				mdp_config.Set("degradation_mttf", mttf);
+				mdp_config.Set("degradation_a", degradation_a);
+
+				auto mdp = dp.GetMDP(mdp_config);
+
+				auto policy = mdp->GetPolicy("DoNothingPolicy");
+
+				auto dcl = dp.GetDCL(mdp, policy, dcl_config);
+				//this trains the policy, and saves it to disk.
+				std::cout << "Training, p=" << lead_time_p << ", mttf=" << mttf << ", a=" << degradation_a << std::endl;
+				dcl.TrainPolicy();
+
+				auto policies = dcl.GetPolicies();
+
+				//Compare the various trained policies:
+				auto comparer = dp.GetPolicyComparer(mdp, test_config);
+				auto comparison = comparer.Compare(policies);
+				
+				size_t mean_loc = 0;
+				double last_value = 0;
+				for (auto& VarGroup : comparison)
+				{
+					mean_loc = VarGroup.Dump().find("mean");
+					last_value =  std::stod(VarGroup.Dump().substr(mean_loc + 6, 6));
+				}
+				// file << "M, MTTF, a, lead_time, holding_cost, emergency_cost, cost \n";
+				std::cout << last_value << std::endl;
+				file.open("C:/Users/nalkhour/DynaPlex_IO/IO_DynaPlex/experiments/30machines.csv");
+				file << 1 <<"," << mttf <<"," << degradation_a <<"," << lead_time_p <<"," << 1 <<"," << 5 <<"," << last_value <<"\n" ;
+				file.close();
+			}
+		}
+	}
 }
 
 int main() {
-	one_machines();
+	thirty_machines();
 }
