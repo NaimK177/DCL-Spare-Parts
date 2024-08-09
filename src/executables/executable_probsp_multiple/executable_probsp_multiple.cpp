@@ -258,7 +258,7 @@ void ten_machines() {
 	std::cout << "Running experimets with 10 machines" << std::endl;
 
 	std::ofstream file;
-	file.open("C:/Users/nalkhour/DynaPlex_IO/IO_DynaPlex/experiments/10machines.csv", std::ofstream::trunc);
+	file.open("C:/Users/nalkhour/DynaPlex_IO/IO_DynaPlex/experiments/10machines100k2gen.csv", std::ofstream::trunc);
 
 	file << "M, MTTF, a, lead_time, holding_cost, emergency_cost, cost \n";
 
@@ -284,11 +284,11 @@ void ten_machines() {
 		{"type","mlp"},
 		{"hidden_layers",DynaPlex::VarGroup::Int64Vec{128,128}}
 	};
-	int64_t num_gens = 4;
+	int64_t num_gens = 2;
 	DynaPlex::VarGroup dcl_config{
 		//just for illustration, so we collect only little data, so DCL will run fast but will not perform well.
 		{"num_gens",num_gens},
-		{"N",150000}, // Number of states to be collected (samples from the state space and we evaluate the Q for these states)
+		{"N",100000}, // Number of states to be collected (samples from the state space and we evaluate the Q for these states)
 		// The NN then approximate the other states from these states
 		{"M",100}, // Number of exogenous scenarios/(s,a) pair
 		{"H",20}, // Depth of Rollout (finite horizon to evaluate the state actions values under the different exogenous scenarios)
@@ -423,9 +423,9 @@ void one_machines() {
 	std::vector<double> lead_time_p_vector = {1.0, 0.5, 0.33, 0.25, 0.2};
 	std::vector<double> degradation_a_vector = {1.0, 5.0};
 
-	// mttf_vector = {5.0};
-	// lead_time_p_vector = {1.0};
-	// degradation_a_vector = {1.0};
+	mttf_vector = {10.0};
+	lead_time_p_vector = {0.33};
+	degradation_a_vector = {1.0};
 
 	for (double mttf : mttf_vector)
 	{
@@ -474,7 +474,7 @@ void thirty_machines() {
 	std::cout << "Running experiments with 30 machines" << std::endl;
 
 	std::ofstream file;
-	file.open("C:/Users/nalkhour/DynaPlex_IO/IO_DynaPlex/experiments/30machines.csv", std::ofstream::trunc);
+	file.open("C:/Users/nalkhour/DynaPlex_IO/IO_DynaPlex/experiments/30machines500k4gen.csv", std::ofstream::trunc);
 
 	file << "M, MTTF, a, lead_time, holding_cost, emergency_cost, cost \n";
 
@@ -532,9 +532,9 @@ void thirty_machines() {
 	std::vector<double> lead_time_p_vector = {1.0, 0.5, 0.33, 0.25, 0.2};
 	std::vector<double> degradation_a_vector = {1.0, 5.0};
 
-	mttf_vector = {5.0};
-	lead_time_p_vector = {1.0};
-	degradation_a_vector = {1.0};
+	// mttf_vector = {5.0};
+	// lead_time_p_vector = {1.0};
+	// degradation_a_vector = {1.0};
 
 	for (double mttf : mttf_vector)
 	{
@@ -570,7 +570,7 @@ void thirty_machines() {
 				}
 				// file << "M, MTTF, a, lead_time, holding_cost, emergency_cost, cost \n";
 				std::cout << last_value << std::endl;
-				file.open("C:/Users/nalkhour/DynaPlex_IO/IO_DynaPlex/experiments/30machines.csv");
+				file.open("C:/Users/nalkhour/DynaPlex_IO/IO_DynaPlex/experiments/30machines500k4gen.csv");
 				file << 1 <<"," << mttf <<"," << degradation_a <<"," << lead_time_p <<"," << 1 <<"," << 5 <<"," << last_value <<"\n" ;
 				file.close();
 			}
@@ -579,5 +579,5 @@ void thirty_machines() {
 }
 
 int main() {
-	thirty_machines();
+	one_machines();
 }

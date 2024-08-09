@@ -46,7 +46,7 @@ namespace DynaPlex::Models {
 			}
 			
 			state.inventory_level = state.inventory_level + ArrivedSpareParts;
-			state.outstanding_orders = state.outstanding_orders - ArrivedSpareParts;
+			state.outstanding_orders = state.outstanding_orders - ArrivedSpareParts + state.last_decision;
 			
 
 			for (size_t i = 0; i < number_machines; ++i)
@@ -107,7 +107,7 @@ namespace DynaPlex::Models {
 			}
 			// std::cout << "Started Modify State with Action :" << action << std::endl;
 			// Update outstanding orders with the action
-			state.outstanding_orders = state.outstanding_orders + action;
+			state.last_decision = action;
 			// std::cout << "Modified State with Action " << std::endl;
 			//std::cout << "Received action: " << action << "O=" << state.outstanding_orders << std::endl;
 			// Ensure the action does not violate the constraints
@@ -128,6 +128,7 @@ namespace DynaPlex::Models {
 			vars.Add("Degradations", degradation);
 			vars.Add("Inventory Level", inventory_level);
 			vars.Add("Outstanding Orders", outstanding_orders);
+			vars.Add("Last Decision", last_decision);
 			//add any other state variables. 
 			return vars;
 		}
@@ -139,6 +140,7 @@ namespace DynaPlex::Models {
 			vars.Get("Degradations", state.degradation);
 			vars.Get("Inventory Level", state.inventory_level);
 			vars.Get("Outstanding Orders", state.outstanding_orders);
+			vars.Get("Last Decision", state.last_decision);
 			//initiate any other state variables. 
 			return state;
 		}
@@ -151,11 +153,6 @@ namespace DynaPlex::Models {
 			//state.degradation.resize(number_machines);
 			//state.cat = StateCategory::AwaitEvent();//or AwaitAction(), depending on logic
 			state.cat = StateCategory::AwaitAction();
-			//initiate other variables. 
-			// initialize degradations to 0 using a loop
-			// for(int i = 0; i < state.degradations.size(); ++i) {
-			// 	state.degradations[i] = 0;
-			// }
 
 			for (size_t i = 0; i < number_machines; ++i)
 			{
@@ -165,6 +162,7 @@ namespace DynaPlex::Models {
 			// initialize inventory level and outstanding orders to 0
 			state.inventory_level = 0;
 			state.outstanding_orders = 0;
+			state.last_decision = 0;
 			return state;
 			
 

@@ -28,6 +28,7 @@ namespace DynaPlex::Models {
 				std::vector<double> degradation;
 				int64_t inventory_level;
 				int64_t outstanding_orders;
+				int64_t last_decision;
 
 				//using this is recommended:
 				DynaPlex::StateCategory cat;
