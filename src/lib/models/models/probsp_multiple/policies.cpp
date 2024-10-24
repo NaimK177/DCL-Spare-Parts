@@ -30,15 +30,9 @@ namespace DynaPlex::Models {
 			if (base_stock_level > 0)
 			{
 				to_order = base_stock_level - state.outstanding_orders - state.inventory_level;
-				if (to_order + state.outstanding_orders + state.inventory_level > base_stock_level)
+				if (to_order < 0)
 				{
-					std::cout << "Making an action:" << to_order << " when I=" << state.inventory_level << ", and O=" << state.outstanding_orders << std::endl;
-					throw DynaPlex::Error("BSP Policy: With the order the system will exceed the base stock level");
-				}
-				else if (to_order < 0)
-				{
-					std::cout << "Making an action:" << to_order << " when I=" << state.inventory_level << ", and O=" << state.outstanding_orders << std::endl;
-					throw DynaPlex::Error("BSP Policy: Cannot order below 0");
+					return 0;
 				}
 				else
 				{
@@ -48,9 +42,38 @@ namespace DynaPlex::Models {
 			else 
 			{
 				return to_order;
+			}	
+		}
+
+		ProBSP::ProBSP(std::shared_ptr<const MDP> mdp, const VarGroup& config)
+			:mdp{ mdp }
+		{
+			config.GetOrDefault("base_stock_level", base_stock_level, 0);
+			config.GetOrDefault("ordering_threshold", ordering_threshold, 50);
+			std::cout << "Initialized a ProBSP with N="<< base_stock_level << ", Xo="<< ordering_threshold << std::endl;
+		}
+
+		int64_t ProBSP::GetAction(const MDP::State& state) const
+		{
+			int64_t to_order = 0;
+			int64_t num_machines_xo = 0;
+			for (size_t i = 0; i < sizeof(state.degradation)/sizeof(state.degradation[0]); i++)
+			{
+				if (state.degradation[i] > ordering_threshold)
+				{
+					num_machines_xo = num_machines_xo + 1;
+				}
 			}
+			to_order = base_stock_level + num_machines_xo - state.inventory_level - state.outstanding_orders;
 			
-			
+			if (to_order < 0)
+			{
+				return 0;
+			}
+			else
+			{
+				return to_order;
+			}
 		}
     }
 }

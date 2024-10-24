@@ -28,6 +28,18 @@ namespace DynaPlex::Models {
 			BaseStockPolicy(std::shared_ptr<const MDP> mdp, const VarGroup& config);
 			int64_t GetAction(const MDP::State& state) const;
 		};
+		class ProBSP
+		{
+			//this is the MDP defined inside the current namespace!
+			std::shared_ptr<const MDP> mdp;
+			const VarGroup varGroup;
+			int64_t base_stock_level;
+			double ordering_threshold;
+			//You could add policy parameters here:
+		public:
+			ProBSP(std::shared_ptr<const MDP> mdp, const VarGroup& config);
+			int64_t GetAction(const MDP::State& state) const;
+		};
 	}
 }
 

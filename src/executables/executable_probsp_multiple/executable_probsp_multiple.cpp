@@ -284,7 +284,7 @@ void ten_machines() {
 		{"type","mlp"},
 		{"hidden_layers",DynaPlex::VarGroup::Int64Vec{128,128}}
 	};
-	int64_t num_gens = 2;
+	int64_t num_gens = 4;
 	DynaPlex::VarGroup dcl_config{
 		//just for illustration, so we collect only little data, so DCL will run fast but will not perform well.
 		{"num_gens",num_gens},
@@ -423,9 +423,9 @@ void one_machines() {
 	std::vector<double> lead_time_p_vector = {1.0, 0.5, 0.33, 0.25, 0.2};
 	std::vector<double> degradation_a_vector = {1.0, 5.0};
 
-	mttf_vector = {10.0};
-	lead_time_p_vector = {0.33};
-	degradation_a_vector = {1.0};
+	// mttf_vector = {10.0};
+	// lead_time_p_vector = {0.33};
+	// degradation_a_vector = {1.0};
 
 	for (double mttf : mttf_vector)
 	{
@@ -476,7 +476,7 @@ void thirty_machines() {
 	std::ofstream file;
 	file.open("C:/Users/nalkhour/DynaPlex_IO/IO_DynaPlex/experiments/30machines500k4gen.csv", std::ofstream::trunc);
 
-	file << "M, MTTF, a, lead_time, holding_cost, emergency_cost, cost \n";
+	file << "M, MTTF, a, lead_time, holding_cost, emergency_cost, best_cost, last_cost \n";
 
 	file.close();
 	auto& dp = DynaPlexProvider::Get();
@@ -508,7 +508,7 @@ void thirty_machines() {
 		{"N",500000}, // Number of states to be collected (samples from the state space and we evaluate the Q for these states)
 		// The NN then approximate the other states from these states
 		{"M",100}, // Number of exogenous scenarios/(s,a) pair
-		{"H",20}, // Depth of Rollout (finite horizon to evaluate the state actions values under the different exogenous scenarios)
+		{"H",10}, // Depth of Rollout (finite horizon to evaluate the state actions values under the different exogenous scenarios)
 		{"L", 2000}, // Warmup Period Length
 		
 		{"nn_architecture",nn_architecture},
@@ -526,11 +526,14 @@ void thirty_machines() {
 	auto mdp = dp.GetMDP(mdp_config);
 
 	DynaPlex::VarGroup policy_config;
-	auto policy = mdp->GetPolicy("DoNothingPolicy");
+	policy_config.Add("id", "ProBSP");
+	policy_config.Add("base_stock_level", 9);
+	policy_config.Add("ordering_threshold", 68.75);
+	// auto policy = mdp->GetPolicy(policy_config);
 
-	std::vector<double> mttf_vector = {5.0, 10.0, 20.0};
-	std::vector<double> lead_time_p_vector = {1.0, 0.5, 0.33, 0.25, 0.2};
-	std::vector<double> degradation_a_vector = {1.0, 5.0};
+	std::vector<double> mttf_vector = {10.0};
+	std::vector<double> lead_time_p_vector = {0.2};
+	std::vector<double> degradation_a_vector = {5.0};
 
 	// mttf_vector = {5.0};
 	// lead_time_p_vector = {1.0};
@@ -548,7 +551,8 @@ void thirty_machines() {
 
 				auto mdp = dp.GetMDP(mdp_config);
 
-				auto policy = mdp->GetPolicy("DoNothingPolicy");
+				//auto policy = mdp->GetPolicy("DoNothingPolicy");
+				auto policy = mdp->GetPolicy(policy_config);
 
 				auto dcl = dp.GetDCL(mdp, policy, dcl_config);
 				//this trains the policy, and saves it to disk.
@@ -563,15 +567,21 @@ void thirty_machines() {
 				
 				size_t mean_loc = 0;
 				double last_value = 0;
+				double best_value = 10000;
 				for (auto& VarGroup : comparison)
 				{
 					mean_loc = VarGroup.Dump().find("mean");
 					last_value =  std::stod(VarGroup.Dump().substr(mean_loc + 6, 6));
+					if (last_value < best_value)
+					{
+						best_value = last_value;
+					}
+					
 				}
 				// file << "M, MTTF, a, lead_time, holding_cost, emergency_cost, cost \n";
 				std::cout << last_value << std::endl;
-				file.open("C:/Users/nalkhour/DynaPlex_IO/IO_DynaPlex/experiments/30machines500k4gen.csv");
-				file << 1 <<"," << mttf <<"," << degradation_a <<"," << lead_time_p <<"," << 1 <<"," << 5 <<"," << last_value <<"\n" ;
+				file.open("C:/Users/nalkhour/DynaPlex_IO/IO_DynaPlex/experiments/30machines500k4gen.csv", std::ios_base::app);
+				file << 30 <<"," << mttf <<"," << degradation_a <<"," << lead_time_p <<"," << 1 <<"," << 5 <<","<< best_value << ',' << last_value <<"\n" ;
 				file.close();
 			}
 		}
@@ -579,5 +589,5 @@ void thirty_machines() {
 }
 
 int main() {
-	one_machines();
+	thirty_machines();
 }

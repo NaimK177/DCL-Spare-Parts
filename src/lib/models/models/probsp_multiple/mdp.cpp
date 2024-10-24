@@ -32,13 +32,7 @@ namespace DynaPlex::Models {
 			int64_t ArrivedSpareParts = 0;
 			for (size_t i = 0; i < state.outstanding_orders; ++i)
 			{
-				ArrivedSpareParts = ArrivedSpareParts + event.arrivals_array[i];
-				if (event.arrivals_array[i] > 1)
-				{
-					std::cout << "Got an arrival value of > 1" << std::endl;
-					throw DynaPlex::Error("Cannot have an arrival indicator > 1");
-				}
-				
+				ArrivedSpareParts = ArrivedSpareParts + event.arrivals_array[i];			
 			}
 			if (ArrivedSpareParts > state.outstanding_orders)
 			{
@@ -256,6 +250,8 @@ namespace DynaPlex::Models {
 				"A do nothing policy. ");
 			registry.Register<BaseStockPolicy>("BaseStockPolicy",
 				"A base stock level policy");
+			registry.Register<ProBSP>("ProBSP",
+				"ProBSP");
 		}
 
 		DynaPlex::StateCategory MDP::GetStateCategory(const State& state) const
@@ -274,7 +270,6 @@ namespace DynaPlex::Models {
 			{
 				return false;
 			}
-			
 		}
 
 
