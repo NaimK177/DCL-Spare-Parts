@@ -481,12 +481,14 @@ void thirty_machines() {
 	file.close();
 	auto& dp = DynaPlexProvider::Get();
 
+	// Initialization of an mdp config
 	DynaPlex::VarGroup mdp_config;
 	mdp_config.Add("id", "probsp_multiple");
 	mdp_config.Add("discount_factor", 0.99);
 	mdp_config.Add("number_machines", 30);
 	mdp_config.Add("holding_cost", 1);
 	mdp_config.Add("emergency_cost", 5);
+	// The below parameters will be re-set inside the loop
 	mdp_config.Add("lead_time_p", 0.33);
 	mdp_config.Add("degradation_mttf", 20);
 	mdp_config.Add("degradation_a", 5);
@@ -523,21 +525,16 @@ void thirty_machines() {
 	test_config.Add("periods_per_trajectory", 10000);
 	test_config.Add("warmup_periods", 2000);
 
-	auto mdp = dp.GetMDP(mdp_config);
-
 	DynaPlex::VarGroup policy_config;
+	// policy_config.Add("id", "DoNothingPolicy");
 	policy_config.Add("id", "ProBSP");
 	policy_config.Add("base_stock_level", 9);
 	policy_config.Add("ordering_threshold", 68.75);
-	// auto policy = mdp->GetPolicy(policy_config);
 
+	// Specify model parameters as vector and loop over them 
 	std::vector<double> mttf_vector = {10.0};
 	std::vector<double> lead_time_p_vector = {0.2};
 	std::vector<double> degradation_a_vector = {5.0};
-
-	// mttf_vector = {5.0};
-	// lead_time_p_vector = {1.0};
-	// degradation_a_vector = {1.0};
 
 	for (double mttf : mttf_vector)
 	{
@@ -565,6 +562,7 @@ void thirty_machines() {
 				auto comparer = dp.GetPolicyComparer(mdp, test_config);
 				auto comparison = comparer.Compare(policies);
 				
+				// Getting the eval results in each training iterations
 				size_t mean_loc = 0;
 				double last_value = 0;
 				double best_value = 10000;
@@ -578,7 +576,6 @@ void thirty_machines() {
 					}
 					
 				}
-				// file << "M, MTTF, a, lead_time, holding_cost, emergency_cost, cost \n";
 				std::cout << last_value << std::endl;
 				file.open("C:/Users/nalkhour/DynaPlex_IO/IO_DynaPlex/experiments/30machines500k4gen.csv", std::ios_base::app);
 				file << 30 <<"," << mttf <<"," << degradation_a <<"," << lead_time_p <<"," << 1 <<"," << 5 <<","<< best_value << ',' << last_value <<"\n" ;

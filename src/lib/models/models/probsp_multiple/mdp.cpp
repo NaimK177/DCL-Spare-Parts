@@ -89,17 +89,6 @@ namespace DynaPlex::Models {
 				std::cout << "Got an action:" << action << " when I=" << state.inventory_level << ", and O=" << state.outstanding_orders << std::endl;
 				throw DynaPlex::Error("Model: Action cannot take negative values");
 			}
-			if (state.outstanding_orders + state.inventory_level + action > number_machines)
-			{
-				std::cout << "M=" << number_machines << ", I=" << state.inventory_level << ", O=" << state.outstanding_orders << std::endl;
-				throw DynaPlex::Error("Model: Action violates capacity constraints");
-			}
-			if (state.inventory_level + state.outstanding_orders + action > number_machines)
-			{
-				std::cout << "A=" << action << ", I=" << state.inventory_level << ", and O=" << state.outstanding_orders << std::endl;
-				throw DynaPlex::Error("Model: A + I + O are greater than BSP Initial Level");
-			}
-			// std::cout << "Started Modify State with Action :" << action << std::endl;
 			// Update outstanding orders with the action
 			state.last_decision = action;
 			// std::cout << "Modified State with Action " << std::endl;
