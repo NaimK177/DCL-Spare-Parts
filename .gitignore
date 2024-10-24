@@ -33,3 +33,9 @@ poetry*.lock
 /libtorch
 CMakePresets.json
 src/lib/models/models/probsp_multiple/mdp-Naim’s MacBook Pro 2.cpp
+.DS_Store
+src/.DS_Store
+src/executables/.DS_Store
+src/lib/.DS_Store
+src/lib/models/.DS_Store
+src/lib/models/models/.DS_Store
