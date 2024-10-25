@@ -505,6 +505,7 @@ void thirty_machines() {
 		{"type","mlp"},
 		{"hidden_layers",DynaPlex::VarGroup::Int64Vec{256,256}}
 	};
+
 	int64_t num_gens = 4;
 	DynaPlex::VarGroup dcl_config{
 		//just for illustration, so we collect only little data, so DCL will run fast but will not perform well.
@@ -589,7 +590,8 @@ void thirty_machines() {
 
 void run_experiment(int machines, int mttf, double lead_time_p, int a, int probsp_n, double probsp_xo)
 {
-	std::cout << "Running experiments, M=" << machines <<", L="<< lead_time_p << ", a=" << a << ", mttf=" << mttf << std::endl;
+	//machines,mttf,lead_time_p,a,best_cost,last_cost,iterations,samples
+	std::ofstream file;
 
 	// Initiate DP
 	auto& dp = DynaPlexProvider::Get();
@@ -610,19 +612,18 @@ void run_experiment(int machines, int mttf, double lead_time_p, int a, int probs
 		{"mini_batch_size", 32},
 		{"max_training_epochs", 100}
 	};
+	
+	DynaPlex::VarGroup nn_architecture{
+		{"type","mlp"},
+		{"hidden_layers",DynaPlex::VarGroup::Int64Vec{128,128}}
+	};
+
 	if (machines == 30)
 	{
 		DynaPlex::VarGroup nn_architecture{
 			{"type","mlp"},
 			{"hidden_layers",DynaPlex::VarGroup::Int64Vec{256,256}}
 		};
-	}
-	else
-	{
-		DynaPlex::VarGroup nn_architecture{
-			{"type","mlp"},
-			{"hidden_layers",DynaPlex::VarGroup::Int64Vec{128,128}}
-		}
 	}
 	
 	int64_t samples = 5000;
@@ -682,8 +683,10 @@ void run_experiment(int machines, int mttf, double lead_time_p, int a, int probs
 	auto policies = dcl.GetPolicies();
 
 	//Compare the various trained policies:
+	std::cout << "Starting Policices Comparison" << std::endl;
 	auto comparer = dp.GetPolicyComparer(mdp, test_config);
 	auto comparison = comparer.Compare(policies);
+	std::cout << "Comparison Done" << std::endl;
 
 	// Getting the eval results in each training iterations
 	size_t mean_loc = 0;
@@ -697,10 +700,14 @@ void run_experiment(int machines, int mttf, double lead_time_p, int a, int probs
 		{
 			best_value = last_value;
 		}
-		
 	}
-	std::cout << last_value << std::endl;
+	std::cout << "Best Cost=" << best_value << ", Last Cost="<< last_value << std::endl;
 
+	//machines,mttf,lead_time_p,a,best_cost,last_cost,iterations,samples
+	file.open("C:/Users/nalkhour/DynaPlex_IO/IO_DynaPlex/experiments/all_experiments.csv", std::ios_base::app);
+	file << machines <<"," << mttf <<"," << lead_time_p <<"," << a <<"," << best_value << ',' << last_value << ',' << num_gens << ',' << samples << ',' << "probsp" <<"\n" ;
+	file.close();
+	std::cout << "=================Experiment Finished =========================" << std::endl;
 }
 
 const int machine_col = 2;
@@ -751,8 +758,9 @@ void readdata()
 			int bsp_n = stoi(row[bsp_n_col]);
 			int probsp_n = stoi(row[probsp_n_col]);
 			double probsp_xo = stod(row[probsp_xo_col]);
-			if (machines == 1)
+			if (machines != 30)
 			{
+				std::cout << "Running experiments, M=" << machines <<", L="<< lead_time << ", a=" << a << ", mttf=" << mttf << std::endl;
 				run_experiment(machines, mttf, lead_time_p, a, probsp_n, probsp_xo);
 			}
 		}  

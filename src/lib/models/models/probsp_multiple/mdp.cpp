@@ -36,6 +36,7 @@ namespace DynaPlex::Models {
 			}
 			if (ArrivedSpareParts > state.outstanding_orders)
 			{
+				std::cout << "Received more than outstanding orders" << std::endl;
 				throw DynaPlex::Error("Received more than outstanding orders");
 			}
 			
@@ -47,7 +48,6 @@ namespace DynaPlex::Models {
 			{
 				state.degradation[i] = state.degradation[i] + event.Increments[i];
 			}
-			// std::cout << "Update the state done, and check degradation" << std::endl;
 			
 			// perform maintenance where necessary
 			for(int i = 0; i < number_machines; ++i) {
@@ -65,6 +65,7 @@ namespace DynaPlex::Models {
 			}
 			if (state.outstanding_orders < 0)
 			{
+				std::cout << "Cannot have negative outstanding orders" << std::endl;
 				throw DynaPlex::Error("Cannot have negative outstanding orders");
 			}
 			
@@ -146,9 +147,8 @@ namespace DynaPlex::Models {
 			state.inventory_level = 0;
 			state.outstanding_orders = 0;
 			state.last_decision = 0;
+			state.number_machines = number_machines;
 			return state;
-			
-
 		}
 
 		MDP::MDP(const VarGroup& config)
@@ -169,16 +169,11 @@ namespace DynaPlex::Models {
 			config.Get("degradation_mttf", degradation_mttf);
 			config.Get("degradation_a", degradation_a);
 
-			// TO ADD
-			// Add spare parts arrivals distribution
 			arrival_dist = DiscreteDist::GetCustomDist({1-lead_time_p, lead_time_p});
 			
 			// DynaPlex::DiscreteDist geometric_distribution = DiscreteDist::GetGeometricDist(lead_time_p);
-			std::cout << "M=" << number_machines << std::endl;
 			// Add degradation increments distribution
 			//degradation_a, (MDP::degradation_mttf * MDP::degradation_a - 0.5) / 100
-			
-			
 		}
 
 
@@ -209,8 +204,6 @@ namespace DynaPlex::Models {
 			}
 
 			return temp;
-
-
 			//throw DynaPlex::NotImplementedError();
 		}
 

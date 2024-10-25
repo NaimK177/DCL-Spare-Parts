@@ -29,6 +29,7 @@ namespace DynaPlex::Models {
 				int64_t inventory_level;
 				int64_t outstanding_orders;
 				int64_t last_decision;
+				int64_t number_machines;
 
 				//using this is recommended:
 				DynaPlex::StateCategory cat;

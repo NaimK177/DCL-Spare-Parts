@@ -57,9 +57,9 @@ namespace DynaPlex::Models {
 		{
 			int64_t to_order = 0;
 			int64_t num_machines_xo = 0;
-			for (size_t i = 0; i < sizeof(state.degradation)/sizeof(state.degradation[0]); i++)
+			for (size_t i = 0; i < state.number_machines; i++)
 			{
-				if (state.degradation[i] > ordering_threshold)
+				if (state.degradation[i] >= ordering_threshold)
 				{
 					num_machines_xo = num_machines_xo + 1;
 				}
