@@ -3,9 +3,11 @@
 
 #include <iostream>
 #include <fstream>
+#include <sstream>
 
 #include "dynaplex/dynaplexprovider.h"
 using namespace DynaPlex;
+using namespace std;
 
 int single_experiment() {
 //     boost::math::binomial_distribution<> binom_dist(10, 0.5);
@@ -585,6 +587,65 @@ void thirty_machines() {
 	}
 }
 
+void run_experiment(int machines, int mttf, double lead_time_p, int a, int probsp_n, double probsp_xo)
+{
+	std::cout << "Running experiments, M=" << machines <<", L="<< lead_time_p << ", a=" << a << ", mttf=" << mttf << std::endl;
+}
+
+const int machine_col = 2;
+const int mttf_col = 4;
+const int lead_time_col = 3;
+const int a_col = 5;
+const int bsp_n_col = 8;
+const int probsp_n_col = 10;
+const int probsp_xo_col = 11;
+
+void readdata() 
+{
+	std::cout << "Reading Data from all_data.csv" << std::endl;
+	ifstream file("C:/Users/nalkhour/OneDrive - UGent/Documents/DynaPlex/DP/DynaPlex/src/executables/executable_probsp_multiple/all_data.csv");
+    if (!file.is_open()) {
+        throw DynaPlex::Error("File open");
+    }
+	std::cout << "File open" << std::endl;
+
+    std::string line, word;
+    std::vector<std::vector<std::string>> data;
+    
+    // Read each line from the file
+    while (std::getline(file, line)) 
+    {
+        std::stringstream ss(line);
+        std::vector<std::string> row;
+        
+        // Split the line by commas
+        while (std::getline(ss, word, ',')) {
+            row.push_back(word);  // Store each word in the row
+        }
+        
+        data.push_back(row);
+    }
+
+    file.close();  // Close the file
+	std::cout << "Data Read" << std::endl;
+
+    for (const auto& row : data) {
+		if (!(row[machine_col] == "machines"))
+		{
+			int machines = stoi(row[machine_col]);
+			int mttf = stoi(row[mttf_col]);
+			int lead_time = stoi(row[lead_time_col]);
+			double lead_time_p = 1/lead_time;
+			int a = stoi(row[a_col]);
+			int bsp_n = stoi(row[bsp_n_col]);
+			int probsp_n = stoi(row[probsp_n_col]);
+			double probsp_xo = stod(row[probsp_xo_col]);
+			run_experiment(machines, mttf, lead_time_p, a, probsp_n, probsp_xo);
+		}  
+    }
+}
+
+
 int main() {
-	thirty_machines();
+	readdata();
 }

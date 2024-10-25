@@ -9,7 +9,6 @@
 using namespace DynaPlex;
 using namespace std;
 
-
 const int machine_col = 2;
 const int mttf_col = 4;
 const int lead_time_col = 3;
@@ -48,5 +47,9 @@ void readdata()
     for (const auto& row : data) {
         std::cout<< row[machine_col] << std::endl;
     }
+}
 
+void main()
+{
+    readdata();
 }
