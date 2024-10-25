@@ -590,6 +590,117 @@ void thirty_machines() {
 void run_experiment(int machines, int mttf, double lead_time_p, int a, int probsp_n, double probsp_xo)
 {
 	std::cout << "Running experiments, M=" << machines <<", L="<< lead_time_p << ", a=" << a << ", mttf=" << mttf << std::endl;
+
+	// Initiate DP
+	auto& dp = DynaPlexProvider::Get();
+
+	// Initialization of an mdp config
+	DynaPlex::VarGroup mdp_config;
+	mdp_config.Add("id", "probsp_multiple");
+	mdp_config.Add("discount_factor", 0.99);
+	mdp_config.Add("number_machines", machines);
+	mdp_config.Add("holding_cost", 1);
+	mdp_config.Add("emergency_cost", 5);
+	mdp_config.Add("lead_time_p", lead_time_p);
+	mdp_config.Add("degradation_mttf", mttf);
+	mdp_config.Add("degradation_a", a);
+
+	DynaPlex::VarGroup nn_training{
+		{"early_stopping_patience",20},
+		{"mini_batch_size", 32},
+		{"max_training_epochs", 100}
+	};
+	if (machines == 30)
+	{
+		DynaPlex::VarGroup nn_architecture{
+			{"type","mlp"},
+			{"hidden_layers",DynaPlex::VarGroup::Int64Vec{256,256}}
+		};
+	}
+	else
+	{
+		DynaPlex::VarGroup nn_architecture{
+			{"type","mlp"},
+			{"hidden_layers",DynaPlex::VarGroup::Int64Vec{128,128}}
+		}
+	}
+	
+	int64_t samples = 5000;
+
+	if (machines == 5)
+	{
+		samples = 20000;
+	}
+	else if (machines == 10)
+	{
+		samples = 100000;
+	}
+	else if (machines == 30)
+	{
+		samples = 500000;
+	}
+
+	int64_t num_gens = 2;
+
+	// DCL Hypper-parameters
+	DynaPlex::VarGroup dcl_config{
+		//just for illustration, so we collect only little data, so DCL will run fast but will not perform well.
+		{"num_gens",num_gens},
+		{"N",samples}, // Number of states to be collected (samples from the state space and we evaluate the Q for these states)
+		// The NN then approximate the other states from these states
+		{"M",100}, // Number of exogenous scenarios/(s,a) pair
+		{"H",20}, // Depth of Rollout (finite horizon to evaluate the state actions values under the different exogenous scenarios)
+		{"L", 2000}, // Warmup Period Length
+		
+		{"nn_architecture",nn_architecture},
+		{"nn_training",nn_training},
+		{"retrain_lastgen_only",false},
+
+		{"enable_sequential_halving", true}
+	};
+
+	DynaPlex::VarGroup test_config;
+	test_config.Add("number_of_trajectories", 20);
+	test_config.Add("periods_per_trajectory", 10000);
+	test_config.Add("warmup_periods", 2000);
+
+	DynaPlex::VarGroup policy_config;
+	// policy_config.Add("id", "DoNothingPolicy");
+	policy_config.Add("id", "ProBSP");
+	policy_config.Add("base_stock_level", probsp_n);
+	policy_config.Add("ordering_threshold", probsp_xo);
+
+	auto mdp = dp.GetMDP(mdp_config);
+
+	//auto policy = mdp->GetPolicy("DoNothingPolicy");
+	auto policy = mdp->GetPolicy(policy_config);
+
+	auto dcl = dp.GetDCL(mdp, policy, dcl_config);
+	//this trains the policy, and saves it to disk.
+	dcl.TrainPolicy();
+
+	auto policies = dcl.GetPolicies();
+
+	//Compare the various trained policies:
+	auto comparer = dp.GetPolicyComparer(mdp, test_config);
+	auto comparison = comparer.Compare(policies);
+
+	// Getting the eval results in each training iterations
+	size_t mean_loc = 0;
+	double last_value = 0;
+	double best_value = 10000;
+	for (auto& VarGroup : comparison)
+	{
+		mean_loc = VarGroup.Dump().find("mean");
+		last_value =  std::stod(VarGroup.Dump().substr(mean_loc + 6, 6));
+		if (last_value < best_value)
+		{
+			best_value = last_value;
+		}
+		
+	}
+	std::cout << last_value << std::endl;
+
 }
 
 const int machine_col = 2;
@@ -640,7 +751,10 @@ void readdata()
 			int bsp_n = stoi(row[bsp_n_col]);
 			int probsp_n = stoi(row[probsp_n_col]);
 			double probsp_xo = stod(row[probsp_xo_col]);
-			run_experiment(machines, mttf, lead_time_p, a, probsp_n, probsp_xo);
+			if (machines == 1)
+			{
+				run_experiment(machines, mttf, lead_time_p, a, probsp_n, probsp_xo);
+			}
 		}  
     }
 }
