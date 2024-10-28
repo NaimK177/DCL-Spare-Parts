@@ -37,7 +37,7 @@ namespace DynaPlex::Models {
 			if (ArrivedSpareParts > state.outstanding_orders)
 			{
 				std::cout << "Received more than outstanding orders" << std::endl;
-				throw DynaPlex::Error("Received more than outstanding orders");
+				throw DynaPlex::Error("ModifyStatewithEvent: Received more enough than outstanding orders");
 			}
 			
 			state.inventory_level = state.inventory_level + ArrivedSpareParts;
@@ -68,8 +68,16 @@ namespace DynaPlex::Models {
 				std::cout << "Cannot have negative outstanding orders" << std::endl;
 				throw DynaPlex::Error("Cannot have negative outstanding orders");
 			}
+
+			if (state.outstanding_orders > number_machines)
+			{
+				std::cout << "Cannot have outstanding orders more than number of machines" << std::endl;
+				throw DynaPlex::Error("Cannot have outstanding orders more than number of machines");
+			}
 			
-			
+			// Sort the degradation here:
+			std::sort(state.degradation.begin(), state.degradation.end());
+
 			// std::cout << "Degradation performed " << std::endl;
 			costs = costs + state.inventory_level * holding_cost;
 			// std::cout << "Total costs= " << costs << std::endl;
@@ -89,6 +97,13 @@ namespace DynaPlex::Models {
 			{
 				std::cout << "Got an action:" << action << " when I=" << state.inventory_level << ", and O=" << state.outstanding_orders << std::endl;
 				throw DynaPlex::Error("Model: Action cannot take negative values");
+			}
+			if (action + state.inventory_level + state.outstanding_orders > number_machines)
+			{
+				std::cout << "Got an action:" << action << " when I=" << state.inventory_level << ", and O=" << state.outstanding_orders << std::endl;
+				// action = 0;
+				// std::cout << "Action of ProBSP truncated because it violates the capacity constraints" << std::endl;
+				throw DynaPlex::Error("ModifyStateWIthAction: have too many outstanding orders");
 			}
 			// Update outstanding orders with the action
 			state.last_decision = action;

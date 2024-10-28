@@ -57,7 +57,7 @@ namespace DynaPlex::Models {
 		{
 			int64_t to_order = 0;
 			int64_t num_machines_xo = 0;
-			for (size_t i = 0; i < state.number_machines; i++)
+			for (size_t i = 0; i < state.number_machines; ++i)
 			{
 				if (state.degradation[i] >= ordering_threshold)
 				{
@@ -65,14 +65,20 @@ namespace DynaPlex::Models {
 				}
 			}
 			to_order = base_stock_level + num_machines_xo - state.inventory_level - state.outstanding_orders;
-			
-			if (to_order < 0)
+			if (to_order + state.inventory_level + state.outstanding_orders > state.number_machines)
 			{
-				return 0;
+				int64_t excess = to_order + state.inventory_level + state.outstanding_orders - state.number_machines;
+				to_order = to_order - excess;
+			}
+			
+			if (to_order > 0)
+			{
+				
+				return to_order;
 			}
 			else
 			{
-				return to_order;
+				return 0;
 			}
 		}
     }

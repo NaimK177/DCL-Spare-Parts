@@ -588,8 +588,9 @@ void thirty_machines() {
 	}
 }
 
-void run_experiment(int machines, int mttf, double lead_time_p, int a, int probsp_n, double probsp_xo)
+void run_experiment(int machines, int mttf, int lead_time, int a, int probsp_n, double probsp_xo)
 {
+	double lead_time_p = 1/lead_time;
 	//machines,mttf,lead_time_p,a,best_cost,last_cost,iterations,samples
 	std::ofstream file;
 
@@ -690,13 +691,20 @@ void run_experiment(int machines, int mttf, double lead_time_p, int a, int probs
 
 	// Getting the eval results in each training iterations
 	size_t mean_loc = 0;
+	int64_t policies_i = 0;
+	double probsp_value = 0;
 	double last_value = 0;
 	double best_value = 10000;
 	for (auto& VarGroup : comparison)
 	{
 		mean_loc = VarGroup.Dump().find("mean");
 		last_value =  std::stod(VarGroup.Dump().substr(mean_loc + 6, 6));
-		if (last_value < best_value)
+		if (policies_i == 0)
+		{
+			probsp_value = last_value;
+			policies_i = policies_i + 1;
+		}
+		else if (last_value < best_value & policies_i > 0)
 		{
 			best_value = last_value;
 		}
@@ -705,7 +713,7 @@ void run_experiment(int machines, int mttf, double lead_time_p, int a, int probs
 
 	//machines,mttf,lead_time_p,a,best_cost,last_cost,iterations,samples
 	file.open("C:/Users/nalkhour/DynaPlex_IO/IO_DynaPlex/experiments/all_experiments.csv", std::ios_base::app);
-	file << machines <<"," << mttf <<"," << lead_time_p <<"," << a <<"," << best_value << ',' << last_value << ',' << num_gens << ',' << samples << ',' << "probsp" <<"\n" ;
+	file << machines <<"," << mttf <<"," << lead_time <<"," << a <<"," << best_value << ',' << last_value << ','<< probsp_value << "," << num_gens << ',' << samples << ',' << "probsp" <<"\n" ;
 	file.close();
 	std::cout << "=================Experiment Finished =========================" << std::endl;
 }
@@ -753,7 +761,6 @@ void readdata()
 			int machines = stoi(row[machine_col]);
 			int mttf = stoi(row[mttf_col]);
 			int lead_time = stoi(row[lead_time_col]);
-			double lead_time_p = 1/lead_time;
 			int a = stoi(row[a_col]);
 			int bsp_n = stoi(row[bsp_n_col]);
 			int probsp_n = stoi(row[probsp_n_col]);
@@ -761,7 +768,14 @@ void readdata()
 			if (machines != 30)
 			{
 				std::cout << "Running experiments, M=" << machines <<", L="<< lead_time << ", a=" << a << ", mttf=" << mttf << std::endl;
-				run_experiment(machines, mttf, lead_time_p, a, probsp_n, probsp_xo);
+				try
+				{
+					run_experiment(machines, mttf, lead_time, a, probsp_n, probsp_xo);
+				}
+				catch(const std::exception& e)
+				{
+					std::cout << "Exception:" << e.what() << '\n';
+				}
 			}
 		}  
     }
