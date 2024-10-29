@@ -186,9 +186,8 @@ namespace DynaPlex::Models {
 
 			arrival_dist = DiscreteDist::GetCustomDist({1-lead_time_p, lead_time_p});
 			
-			// DynaPlex::DiscreteDist geometric_distribution = DiscreteDist::GetGeometricDist(lead_time_p);
-			// Add degradation increments distribution
-			//degradation_a, (MDP::degradation_mttf * MDP::degradation_a - 0.5) / 100
+			std::cout << "Running experiments, M=" <<  number_machines<<", p="<< lead_time_p << ", a=" << degradation_a << ", mttf=" << degradation_mttf << std::endl;
+
 		}
 
 

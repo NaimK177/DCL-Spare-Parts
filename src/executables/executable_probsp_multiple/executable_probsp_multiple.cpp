@@ -590,8 +590,7 @@ void thirty_machines() {
 
 void run_experiment(int machines, int mttf, int lead_time, int a, int probsp_n, double probsp_xo)
 {
-	double lead_time_p = 1/lead_time;
-	//machines,mttf,lead_time_p,a,best_cost,last_cost,iterations,samples
+	double lead_time_p = 1/double(lead_time);
 	std::ofstream file;
 
 	// Initiate DP
