@@ -641,7 +641,7 @@ void run_experiment(int machines, int mttf, int lead_time, int a, int probsp_n, 
 		samples = 500000;
 	}
 
-	int64_t num_gens = 2;
+	int64_t num_gens = 3;
 
 	// DCL Hypper-parameters
 	DynaPlex::VarGroup dcl_config{
@@ -696,6 +696,7 @@ void run_experiment(int machines, int mttf, int lead_time, int a, int probsp_n, 
 	double best_value = 10000;
 	for (auto& VarGroup : comparison)
 	{
+		VarGroup.Dump();
 		mean_loc = VarGroup.Dump().find("mean");
 		last_value =  std::stod(VarGroup.Dump().substr(mean_loc + 6, 6));
 		if (policies_i == 0)
@@ -714,7 +715,7 @@ void run_experiment(int machines, int mttf, int lead_time, int a, int probsp_n, 
 	file.open("C:/Users/nalkhour/DynaPlex_IO/IO_DynaPlex/experiments/all_experiments.csv", std::ios_base::app);
 	file << machines <<"," << mttf <<"," << lead_time <<"," << a <<"," << best_value << ',' << last_value << ','<< probsp_value << "," << num_gens << ',' << samples << ',' << "probsp" <<"\n" ;
 	file.close();
-	std::cout << "=================Experiment Finished =========================" << std::endl;
+	std::cout << "========================Experiment Finished =============================" << std::endl;
 }
 
 const int machine_col = 2;
