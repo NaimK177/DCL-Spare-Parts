@@ -163,6 +163,7 @@ namespace DynaPlex::Models {
 			state.outstanding_orders = 0;
 			state.last_decision = 0;
 			state.number_machines = number_machines;
+			state.orders_capacity = orders_capacity;
 			return state;
 		}
 
@@ -177,6 +178,13 @@ namespace DynaPlex::Models {
 				config.Get("discount_factor", discount_factor);
 			else
 				discount_factor = 1.0;
+			if (config.HasKey("orders_capacity"))
+			{
+				config.Get("orders_capacity", orders_capacity);
+			}
+			else
+				orders_capacity = 0;
+			
 			config.Get("number_machines", number_machines);
 			config.Get("holding_cost", holding_cost);
 			config.Get("emergency_cost", emergency_cost);
@@ -258,13 +266,26 @@ namespace DynaPlex::Models {
 
 		bool MDP::IsAllowedAction(const State& state, int64_t action) const {
 			//throw DynaPlex::NotImplementedError();
-			if (action + state.inventory_level + state.outstanding_orders <= number_machines)
+			if (orders_capacity == 0)
 			{
-				return true;
+				if (action + state.inventory_level + state.outstanding_orders <= number_machines)
+				{
+					return true;
+				}
+				else
+				{
+					return false;
+				}
 			}
 			else
 			{
-				return false;
+				if (action <= std::min(orders_capacity, number_machines-state.inventory_level-state.outstanding_orders))
+				{
+					return true;
+				}
+				else{
+					return false;
+				}
 			}
 		}
 

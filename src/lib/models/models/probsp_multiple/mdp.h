@@ -20,6 +20,7 @@ namespace DynaPlex::Models {
 			double degradation_mttf;
 			double degradation_a;
 			DynaPlex::DiscreteDist arrival_dist;
+			int64_t orders_capacity;
 			
 
 			//any other mdp variables go here:
@@ -30,6 +31,7 @@ namespace DynaPlex::Models {
 				int64_t outstanding_orders;
 				int64_t last_decision;
 				int64_t number_machines;
+				int64_t orders_capacity;
 
 				//using this is recommended:
 				DynaPlex::StateCategory cat;

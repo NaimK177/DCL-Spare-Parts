@@ -606,6 +606,7 @@ void run_experiment(int machines, int mttf, int lead_time, int a, int probsp_n, 
 	mdp_config.Add("lead_time_p", lead_time_p);
 	mdp_config.Add("degradation_mttf", mttf);
 	mdp_config.Add("degradation_a", a);
+	// mdp_config.Add("orders_capacity", 10)
 
 	DynaPlex::VarGroup nn_training{
 		{"early_stopping_patience",20},

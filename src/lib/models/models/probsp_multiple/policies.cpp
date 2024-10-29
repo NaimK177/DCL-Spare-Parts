@@ -67,6 +67,8 @@ namespace DynaPlex::Models {
 			to_order = base_stock_level + num_machines_xo - state.inventory_level - state.outstanding_orders;
 			if (to_order + state.inventory_level + state.outstanding_orders > state.number_machines)
 			{
+				// Used this approach to debug whether this occurs a lot or not.
+				// A faster way is just to take the min of (to_order, M-I-O)
 				int64_t excess = to_order + state.inventory_level + state.outstanding_orders - state.number_machines;
 				to_order = to_order - excess;
 			}
