@@ -696,7 +696,7 @@ void run_experiment(int machines, int mttf, int lead_time, int a, int probsp_n, 
 	double best_value = 10000;
 	for (auto& VarGroup : comparison)
 	{
-		VarGroup.Dump();
+		std::cout << VarGroup.Dump() << std::endl;
 		mean_loc = VarGroup.Dump().find("mean");
 		last_value =  std::stod(VarGroup.Dump().substr(mean_loc + 6, 6));
 		if (policies_i == 0)
