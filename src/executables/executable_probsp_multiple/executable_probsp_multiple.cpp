@@ -622,26 +622,26 @@ void run_experiment(int machines, int mttf, int lead_time, int a, int probsp_n, 
 	{
 		DynaPlex::VarGroup nn_architecture{
 			{"type","mlp"},
-			{"hidden_layers",DynaPlex::VarGroup::Int64Vec{128,128,64}}
+			{"hidden_layers",DynaPlex::VarGroup::Int64Vec{128,128}}
 		};
 	}
 	
-	int64_t samples = 5000;
+	int64_t samples = 20000;
 
 	if (machines == 5)
 	{
-		samples = 20000;
+		samples = 1000;
 	}
 	else if (machines == 10)
 	{
-		samples = 100000;
+		samples = 20000;
 	}
 	else if (machines == 30)
 	{
-		samples = 400000;
+		samples = 50000;
 	}
 
-	int64_t num_gens = 3;
+	int64_t num_gens = 2;
 
 	// DCL Hypper-parameters
 	DynaPlex::VarGroup dcl_config{
@@ -783,5 +783,11 @@ void readdata()
 
 
 int main() {
-	readdata();
+	run_experiment(10,5,5,5,6,38.75);
+	run_experiment(5,5,5,5,3,40);
+	run_experiment(10,5,5,1,6,33.75);
+	run_experiment(5,5,5,1,3,40);
+	run_experiment(5,20,1,5,0,87.5);
+	run_experiment(5,20,2,5,0,92.5);
+	run_experiment(30,20,2,1,1,85);
 }
