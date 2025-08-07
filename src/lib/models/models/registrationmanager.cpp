@@ -21,6 +21,13 @@ namespace DynaPlex::Models {
 	namespace probsp_multiple {
 		void Register(DynaPlex::Registry&);
 	}
+	namespace hetero_parts {
+		void Register(DynaPlex::Registry&);
+	}
+	namespace spare_parts {
+		void Register(DynaPlex::Registry&);
+	}
+
 	void RegistrationManager::RegisterAll(DynaPlex::Registry& registry) {
 		lost_sales::Register(registry);
 		bin_packing::Register(registry);
@@ -28,6 +35,7 @@ namespace DynaPlex::Models {
 		perishable_systems::Register(registry);
 		probsp::Register(registry);
 		probsp_multiple::Register(registry);
-
+		hetero_parts::Register(registry);
+		spare_parts::Register(registry);
 	}
 }
