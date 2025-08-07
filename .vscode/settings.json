@@ -96,6 +96,8 @@
         "xutility": "cpp",
         "coroutine": "cpp",
         "resumable": "cpp",
-        "codecvt": "cpp"
+        "codecvt": "cpp",
+        "expected": "cpp",
+        "source_location": "cpp"
     }
 }
