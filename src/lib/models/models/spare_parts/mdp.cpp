@@ -29,7 +29,14 @@ namespace DynaPlex::Models {
 			{
 				if (state.outstanding_orders[i] > 0 && state.remaining_time_orders[i] == -2)
 				{
-					state.remaining_time_orders[i] = event.arrival_time;
+					if (event.arrival_time > 5)
+					{
+						state.remaining_time_orders[i] = 5;
+					}
+					else
+					{
+						state.remaining_time_orders[i] = event.arrival_time;
+					}
 					break;
 				}
 				
@@ -256,6 +263,8 @@ namespace DynaPlex::Models {
 			config.Get("emergency_cost", emergency_cost);
 			config.Get("degradation_mttf", degradation_mttf);
 			config.Get("degradation_a", degradation_a);
+			config.Get("geometric", geometric);
+			config.Get("lead_time_p", lead_time_p);
 			config.Get("uniform", uniform);
 			config.Get("empirical", empirical);
 			config.Get("deterministic", deterministic);
@@ -268,6 +277,11 @@ namespace DynaPlex::Models {
 			{
 				arrival_dist = DiscreteDist::GetCustomDist({0.1, 0.2, 0.3, 0.3, 0.1}, 1);
 			}
+			else if (geometric)
+			{
+				arrival_dist = DiscreteDist::GetGeometricDistFromProb(lead_time_p);
+			}
+			
 			
 			std::cout << "Running experiments, M=" <<  number_machines << ", a=" << degradation_a << ", mttf=" << degradation_mttf << std::endl;
 
@@ -290,6 +304,10 @@ namespace DynaPlex::Models {
 			if (uniform || empirical)
 			{
 				temp.arrival_time = arrival_dist.GetSample(rng);
+			}
+			else if (geometric)
+			{
+				temp.arrival_time = arrival_dist.GetSample(rng) + 1;
 			}
 			else if (deterministic)
 			{
