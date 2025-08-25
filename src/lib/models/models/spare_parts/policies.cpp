@@ -9,12 +9,35 @@ namespace DynaPlex::Models {
 		DoNothingPolicy::DoNothingPolicy(std::shared_ptr<const MDP> mdp, const VarGroup& config)
 			:mdp{ mdp }
 		{
-			//Here, you may initiate any policy parameters.
+			//You can initialize policy parameters here if needed
+			//config.GetOrDefault("param_name", param, default_value);
+			std::cout << "Initialized a DoNothingPolicy for mdp at memory location " << mdp << std::endl;
 		}
 
 		int64_t DoNothingPolicy::GetAction(const MDP::State& state) const
 		{
 			return 0;
+		}
+
+		RandomPolicy::RandomPolicy(std::shared_ptr<const MDP> mdp, const VarGroup& config)
+			:mdp{ mdp }
+		{
+			config.GetOrDefault("max_batch_size", max_batch_size, 10);
+		}
+
+		int64_t RandomPolicy::GetAction(const MDP::State& state) const
+		{
+			int64_t max_to_order = state.number_machines - state.outstanding_parts - state.inventory_level;
+			if (max_to_order <= 0)
+			{
+				return 0; // No parts to order
+			}
+			else
+			{
+				// Randomly decide how many parts to order, up to max_batch_size
+				int64_t to_order = rand() % std::min(max_to_order, max_batch_size) + 1;
+				return to_order;
+			}
 		}
 
 		BaseStockPolicy::BaseStockPolicy(std::shared_ptr<const MDP> mdp, const VarGroup& config)

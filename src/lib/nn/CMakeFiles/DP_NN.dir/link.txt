@@ -1,0 +1,2 @@
+/Library/Developer/CommandLineTools/usr/bin/ar qc ../../../lib/libDynaPlex_NN.a CMakeFiles/DP_NN.dir/neuralnetworkprovider.cpp.o CMakeFiles/DP_NN.dir/nn_policy.cpp.o CMakeFiles/DP_NN.dir/policytrainer.cpp.o CMakeFiles/DP_NN.dir/sample.cpp.o CMakeFiles/DP_NN.dir/sampledata.cpp.o CMakeFiles/DP_NN.dir/torchavailability.cpp.o CMakeFiles/DP_NN.dir/trainedpolicyprovider.cpp.o
+/Library/Developer/CommandLineTools/usr/bin/ranlib ../../../lib/libDynaPlex_NN.a

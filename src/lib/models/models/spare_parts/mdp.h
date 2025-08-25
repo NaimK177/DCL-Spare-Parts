@@ -23,6 +23,10 @@ namespace DynaPlex::Models {
 			double max_batch_size; // maximum batch size of spare parts that can be ordered at once
 			bool sort_degradation; // whether to sort degradation or not
 			DynaPlex::DiscreteDist arrival_dist;
+			bool geometric;
+			bool uniform;
+			bool deterministic;
+			bool empirical;
 			
 
 			//any other mdp variables go here:
@@ -31,7 +35,8 @@ namespace DynaPlex::Models {
 				std::vector<double> degradation;
 				int64_t inventory_level;
 				int64_t outstanding_parts;
-				std::vector<double> outstanding_orders;
+				std::vector<int64_t> outstanding_orders;
+				std::vector<int64_t> remaining_time_orders;
 				int64_t last_decision;
 				int64_t number_machines;
 
@@ -44,10 +49,11 @@ namespace DynaPlex::Models {
 			//Event may also be struct or class like.
 			// I will add the event as the increments in degradation and arrival of spare parts
 			struct Event {
-				std::vector<int64_t> arrivals_array;
+				// std::vector<int64_t> arrivals_array;
+				int64_t arrival_time;
 				std::vector<double> Increments;
 
-				Event() : arrivals_array(100), Increments(100) {}
+				Event() : arrival_time(1), Increments(100) {}
 				
 			};
 			//using Event = int64_t;

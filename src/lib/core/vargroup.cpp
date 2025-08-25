@@ -5,6 +5,7 @@
 #include "vargroup/nlohmann/json.h"
 #include "vargroup/vargroup_private_support_funcs.h"//hash_json and check_validity and levenshteinDist
 #include <algorithm>
+#include <sstream>  // Added by Naim
 #if DP_PYBIND_SUPPORT
 #include "pybind11/pybind11.h"
 #include "vargroup/pybind11_json.h"

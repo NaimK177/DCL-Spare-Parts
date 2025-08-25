@@ -17,6 +17,17 @@ namespace DynaPlex::Models {
 			DoNothingPolicy(std::shared_ptr<const MDP> mdp, const VarGroup& config);
 			int64_t GetAction(const MDP::State& state) const;
 		};
+		class RandomPolicy
+		{
+			//this is the MDP defined inside the current namespace!
+			std::shared_ptr<const MDP> mdp;
+			const VarGroup varGroup;
+			int64_t max_batch_size;
+			//You could add policy parameters here:
+		public:
+			RandomPolicy(std::shared_ptr<const MDP> mdp, const VarGroup& config);
+			int64_t GetAction(const MDP::State& state) const;
+		};
 		class BaseStockPolicy
 		{
 			//this is the MDP defined inside the current namespace!
