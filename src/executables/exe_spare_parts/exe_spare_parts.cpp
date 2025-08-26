@@ -51,22 +51,22 @@ void run_experiment(int machines, double lead_time_p, int a, double mttf, double
 		};
 	}
 	
-	int64_t samples = 10000;
+	int64_t samples = 5000;
 
 	if (machines == 5)
 	{
-		samples = 20000;
+		samples = 10000;
 	}
 	else if (machines == 10)
 	{
-		samples = 100000;
+		samples = 20000;
 	}
 	else if (machines == 30)
 	{
-		samples = 200000;
+		samples = 40000;
 	}
 
-	int64_t num_gens = 3;
+	int64_t num_gens = 2;
 
 	// DCL Hypper-parameters
 	DynaPlex::VarGroup dcl_config{
@@ -154,7 +154,7 @@ void run_experiment(int machines, double lead_time_p, int a, double mttf, double
 	std::cout << "Best Cost=" << best_value << ", Last Cost="<< last_value << std::endl;
 
 	//machines,alpha,beta,lead_time_p,a,best_cost,last_cost,iterations,samples
-	file.open("C:/Users/Root/Documents/ProBSPDCL/DCL_ProBSP/src/executables/exe_spare_parts/withdomain.csv", std::ios_base::app);
+	file.open("/Users/naim/Library/CloudStorage/OneDrive-UGent/DCL Spare Batch/DCL_ProBSP/src/executables/exe_spare_parts/withdomain.csv", std::ios_base::app);
 	file << policy_id <<"," << machines <<"," << lead_time_p << "," << mttf <<"," << a <<"," << ordering_cost <<","  << emergency_cost <<"," << max_batch_size  <<"," << sort_degradation <<","<< best_value << ',' << last_value << ','<< heur_value << "," << num_gens << ',' << samples <<"\n" ;
 	file.close();
 	std::cout << "========================Experiment Finished =============================" << std::endl;
@@ -181,7 +181,8 @@ bool check_experiment_done(std::string policy_id, int machines, double lead_time
 	const int ordering_cost_col = 5;
 	const int emergency_cost_col = 6;
 	const int max_batch_size_col = 7;
-	std::ifstream file("C:/Users/Root/Documents/ProBSPDCL/DCL_ProBSP/src/executables/exe_spare_parts/withdomain.csv");
+	std::ifstream file("/Users/naim/Library/CloudStorage/OneDrive-UGent/DCL Spare Batch/DCL_ProBSP/src/executables/exe_spare_parts/withdomain.csv");
+	std::cout << "Checking if experiment is already done" << std::endl;
 	if (!file.is_open()) {
 		throw DynaPlex::Error("File open");
 	}
@@ -235,7 +236,7 @@ int read_bsp_n(int machines, double lead_time, double mttf, double a,
 	const int n_col = 8;
 
 	int n = 0;
-	std::ifstream file("C:/Users/Root/Documents/ProBSPDCL/DCL_ProBSP/src/executables/exe_spare_parts/params.csv");
+	std::ifstream file("/Users/naim/Library/CloudStorage/OneDrive-UGent/DCL Spare Batch/DCL_ProBSP/src/executables/exe_spare_parts/params.csv");
 	if (!file.is_open()) {
 		throw DynaPlex::Error("File open");
 	}
@@ -290,7 +291,7 @@ int read_probsp_n(int machines, double lead_time, double mttf, double a,
 	const int n_col = 8;
 
 	int n = 0;
-	std::ifstream file("C:/Users/Root/Documents/ProBSPDCL/DCL_ProBSP/src/executables/exe_spare_parts/params.csv");
+	std::ifstream file("/Users/naim/Library/CloudStorage/OneDrive-UGent/DCL Spare Batch/DCL_ProBSP/src/executables/exe_spare_parts/params.csv");
 	if (!file.is_open()) {
 		throw DynaPlex::Error("File open");
 	}
@@ -345,7 +346,7 @@ int read_probsp_xo(int machines, double lead_time, double mttf, double a,
 	const int xo_col = 9;
 
 	double xo = 50;
-	std::ifstream file("C:/Users/Root/Documents/ProBSPDCL/DCL_ProBSP/src/executables/exe_spare_parts/params.csv");
+	std::ifstream file("/Users/naim/Library/CloudStorage/OneDrive-UGent/DCL Spare Batch/DCL_ProBSP/src/executables/exe_spare_parts/params.csv");
 	if (!file.is_open()) {
 		throw DynaPlex::Error("File open");
 	}
@@ -387,7 +388,7 @@ int read_probsp_xo(int machines, double lead_time, double mttf, double a,
 }
 
 int main() {
-	std::vector<int> machines_vec= {1, 2, 5, 10};
+	std::vector<int> machines_vec= {1, 2, 5, 10, 30};
 	std::vector<double> lead_time_vec = {0.2, 0.5};
 	std::vector<double> mttf_vec = {5, 10, 20};
 	std::vector<double> emergency_cost_vec = {5, 10};
@@ -412,7 +413,7 @@ int main() {
 								n = read_probsp_n(machines, lead_time, mttf, a, ordering_cost, emergency_cost, batch_size);
 								xo = read_probsp_xo(machines, lead_time, mttf, a, ordering_cost, emergency_cost, batch_size);
 							}
-							else if (policy_id == "BaseStockPolicy")
+							else if (policy_id == "bsp")
 							{
 								n = read_bsp_n(machines, lead_time, mttf, a, ordering_cost, emergency_cost, batch_size);
 								xo = 0; // BaseStockPolicy does not use xo
