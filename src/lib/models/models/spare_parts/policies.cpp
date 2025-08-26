@@ -45,7 +45,7 @@ namespace DynaPlex::Models {
 		{
 			config.GetOrDefault("base_stock_level", base_stock_level, 0);
 			config.GetOrDefault("max_batch_size", max_batch_size, 10);
-			std::cout << "Initialized a BSP for mdp at memory location " << mdp << std::endl;
+			std::cout << "Initialized a BSP with N="<< base_stock_level << std::endl;
 		}
 
 		int64_t BaseStockPolicy::GetAction(const MDP::State& state) const

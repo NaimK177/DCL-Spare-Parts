@@ -10,8 +10,8 @@ using namespace DynaPlex;
 using namespace std;
 
 
-void run_experiment(int machines, std::string& lead_time, int a, double mttf, double ordering_cost, double emergency_cost, int max_batch_size,
-	 bool sort_degradation, const std::string& policy_id, int n, double xo, double lead_time_p = 100)
+void run_experiment(int machines, std::string lead_time, int a, double mttf, double ordering_cost, double emergency_cost, int max_batch_size,
+	 bool sort_degradation, const std::string policy_id, int n, double xo, double lead_time_p = 100)
 {
 	std::ofstream file;
 	bool deterministic = false;
@@ -562,10 +562,10 @@ int main()
 {
 	std::vector<int> machines_vec= {30};
 	std::vector<std::string> lead_time_vec = {"geometric"};
-	std::vector<double> mttf_vec = {5, 10, 20};
-	std::vector<double> emergency_cost_vec = {5, 10};
-	std::vector<int> batch_size_vec = {3,5};
-	std::vector<std::string> policies_vec = {"probsp"};
+	std::vector<double> mttf_vec = {5,10,20};
+	std::vector<double> emergency_cost_vec = {5,10};
+	std::vector<int> batch_size_vec = {5,3};
+	std::vector<std::string> policies_vec = {"probsp", "bsp"};
 
 	double a = 1;
 	double ordering_cost = 2;
@@ -600,6 +600,11 @@ int main()
 									xo = read_probsp_xo(machines, lead_time, mttf, a, ordering_cost, emergency_cost, batch_size);
 								}
 							}
+							else if (policy_id == "bsp")
+							{
+								n = read_bsp_n(machines, lead_time_p, mttf, a, ordering_cost,emergency_cost,batch_size);
+							}
+							
 							std::cout << "running problem with lead time: " << lead_time << std::endl;
 							if (check_experiment_done(policy_id, machines, lead_time, mttf, a, ordering_cost, 
 								emergency_cost, batch_size, lead_time_p))
