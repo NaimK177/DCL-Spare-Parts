@@ -1,0 +1,2 @@
+/Library/Developer/CommandLineTools/usr/bin/ar qc ../../../lib/libDynaPlex_Algorithms.a CMakeFiles/DP_Algorithms.dir/dcl/dcl.cpp.o CMakeFiles/DP_Algorithms.dir/dcl/samplegenerator.cpp.o CMakeFiles/DP_Algorithms.dir/dcl/sequentialhalving.cpp.o CMakeFiles/DP_Algorithms.dir/dcl/uniformactionselector.cpp.o
+/Library/Developer/CommandLineTools/usr/bin/ranlib ../../../lib/libDynaPlex_Algorithms.a

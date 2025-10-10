@@ -2,9 +2,21 @@
 cmake_minimum_required (VERSION 3.21)
 project ("DynaPlexSuite" CXX)
 
+# The default flags for C++ version use
 # Added to ensure C++ version
+# set(CMAKE_CXX_STANDARD 20)
+# set(CMAKE_CXX_STANDARD_REQUIRED ON)
+#  Added to ensure the library use
+# set(CMAKE_CXX_EXTENSIONS OFF)
+# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
+
+# Alternative C++ version with jthread
+set(CMAKE_C_COMPILER /opt/homebrew/opt/llvm/bin/clang)
+set(CMAKE_CXX_COMPILER /opt/homebrew/opt/llvm/bin/clang++)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+# add_compile_options(-stdlib=libc++)
+
 
 
 # PROJECT WIDE SETUP

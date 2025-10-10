@@ -10,10 +10,39 @@ using namespace DynaPlex;
 using namespace std;
 
 
-void run_experiment(int machines, double lead_time_p, int a, double mttf, double ordering_cost, 
-	double emergency_cost, int max_batch_size, bool sort_degradation, const std::string& policy_id, int n, double xo)
+void run_experiment(int machines, std::string lead_time, int a, double mttf, double ordering_cost, double emergency_cost, int max_batch_size,
+	 bool sort_degradation, const std::string policy_id, int n, double xo, double lead_time_p = 100)
 {
 	std::ofstream file;
+	bool deterministic = false;
+	bool uniform = false;
+	bool empirical = false;
+	bool geometric = false;
+
+
+	if (lead_time == "uniform")
+	{
+		uniform = true;
+	}
+	else if (lead_time == "deterministic")
+	{
+		deterministic = true;
+	}
+	else if (lead_time == "empirical")
+	{
+		empirical = true;
+	}
+	else if ("geomtric")
+	{
+		geometric = true;
+		if (lead_time_p > 1)
+		{
+			throw DynaPlex::Error("Wrong Value of lead time p");
+		}
+		
+	}
+	
+	
 
 	// Initiate DP
 	auto& dp = DynaPlexProvider::Get();
@@ -26,11 +55,16 @@ void run_experiment(int machines, double lead_time_p, int a, double mttf, double
 	mdp_config.Add("holding_cost", 1);
 	mdp_config.Add("ordering_cost", ordering_cost);
 	mdp_config.Add("emergency_cost", emergency_cost);
-	mdp_config.Add("lead_time_p", lead_time_p);
 	mdp_config.Add("degradation_mttf", mttf);
 	mdp_config.Add("degradation_a", a);
 	mdp_config.Add("max_batch_size", max_batch_size);
 	mdp_config.Add("sort_degradation", sort_degradation);
+	mdp_config.Add("deterministic", deterministic);
+	mdp_config.Add("uniform", uniform);
+	mdp_config.Add("empirical", empirical);
+	mdp_config.Add("geometric", geometric);
+	mdp_config.Add("lead_time_p", lead_time_p);
+
 
 	DynaPlex::VarGroup nn_training{
 		{"early_stopping_patience",20},
@@ -51,22 +85,32 @@ void run_experiment(int machines, double lead_time_p, int a, double mttf, double
 		};
 	}
 	
-	int64_t samples = 10000;
+	int64_t samples = 5000;
 
 	if (machines == 5)
 	{
-		samples = 20000;
+		samples = 10000;
 	}
 	else if (machines == 10)
 	{
-		samples = 100000;
+		samples = 20000;
 	}
 	else if (machines == 30)
 	{
-		samples = 200000;
+		samples = 40000;
 	}
+	else if (machines == 50)
+	{
+		samples = 60000;
+	}
+	else if (machines == 100)
+	{
+		samples = 80000;
+	}
+	
+	
 
-	int64_t num_gens = 3;
+	int64_t num_gens = 2;
 
 	// DCL Hypper-parameters
 	DynaPlex::VarGroup dcl_config{
@@ -74,8 +118,8 @@ void run_experiment(int machines, double lead_time_p, int a, double mttf, double
 		{"num_gens",num_gens},
 		{"N",samples}, // Number of states to be collected (samples from the state space and we evaluate the Q for these states)
 		// The NN then approximate the other states from these states
-		{"M",200}, // Number of exogenous scenarios/(s,a) pair
-		{"H",40}, // Depth of Rollout (finite horizon to evaluate the state actions values under the different exogenous scenarios)
+		{"M",100}, // Number of exogenous scenarios/(s,a) pair
+		{"H",30}, // Depth of Rollout (finite horizon to evaluate the state actions values under the different exogenous scenarios)
 		{"L", 2000}, // Warmup Period Length
 		
 		{"nn_architecture",nn_architecture},
@@ -97,6 +141,7 @@ void run_experiment(int machines, double lead_time_p, int a, double mttf, double
 	}
 	else if (policy_id == "probsp")
 	{
+		std::cout << "Initializing a ProBSP with N, Xo= " << n << "," <<xo << std::endl;
 		policy_config.Add("id", "ProBSP");
 		policy_config.Add("base_stock_level", n);
 		policy_config.Add("ordering_threshold", xo);
@@ -108,6 +153,12 @@ void run_experiment(int machines, double lead_time_p, int a, double mttf, double
 		policy_config.Add("base_stock_level", n);
 		policy_config.Add("max_batch_size", max_batch_size);
 	}
+	else if (policy_id == "rand")
+	{
+		policy_config.Add("id", "RandomPolicy");
+		policy_config.Add("max_batch_size", max_batch_size);
+	}
+
 	// policy_config.Add("id", "DoNothingPolicy");
 	// policy_config.Add("id", "ProBSP");
 	// policy_config.Add("base_stock_level", probsp_n);
@@ -117,7 +168,6 @@ void run_experiment(int machines, double lead_time_p, int a, double mttf, double
 	//auto policy = mdp->GetPolicy("DoNothingPolicy");
 	// std::cout << "reached here" << std::endl;
 	auto policy = mdp->GetPolicy(policy_config);
-
 	auto dcl = dp.GetDCL(mdp, policy, dcl_config);
 	//this trains the policy, and saves it to disk.
 	dcl.TrainPolicy();
@@ -152,10 +202,15 @@ void run_experiment(int machines, double lead_time_p, int a, double mttf, double
 		}
 	}
 	std::cout << "Best Cost=" << best_value << ", Last Cost="<< last_value << std::endl;
+	if (geometric)
+	{
+		lead_time = "geometric-" + std::to_string(lead_time_p);
+	}
+	
 
 	//machines,alpha,beta,lead_time_p,a,best_cost,last_cost,iterations,samples
-	file.open("C:/Users/Root/Documents/ProBSPDCL/DCL_ProBSP/src/executables/exe_spare_parts/withdomain.csv", std::ios_base::app);
-	file << policy_id <<"," << machines <<"," << lead_time_p << "," << mttf <<"," << a <<"," << ordering_cost <<","  << emergency_cost <<"," << max_batch_size  <<"," << sort_degradation <<","<< best_value << ',' << last_value << ','<< heur_value << "," << num_gens << ',' << samples <<"\n" ;
+	file.open("/Users/naim/Library/CloudStorage/OneDrive-UGent/DCL Spare Batch/DCL_ProBSP/src/executables/exe_spare_parts/diff_lead_times.csv", std::ios_base::app);
+	file << policy_id <<"," << machines <<"," << lead_time << "," << mttf <<"," << a <<"," << ordering_cost <<","  << emergency_cost <<"," << max_batch_size  <<"," << sort_degradation <<","<< best_value << ',' << last_value << ','<< heur_value << "," << num_gens << ',' << samples <<"\n" ;
 	file.close();
 	std::cout << "========================Experiment Finished =============================" << std::endl;
 }
@@ -170,8 +225,8 @@ const int probsp_n_col = 5;
 const int probsp_xo_col = 6;
 
 
-bool check_experiment_done(std::string policy_id, int machines, double lead_time, double mttf, double a, 
-	double ordering_cost, double emergency_cost, int max_batch_size)
+bool check_experiment_done(std::string policy_id, int machines, std::string lead_time, double mttf, double a, 
+	double ordering_cost, double emergency_cost, int max_batch_size, double lead_time_p=100)
 {
 	const int policy_col = 0;
 	const int machine_col = 1;
@@ -181,13 +236,19 @@ bool check_experiment_done(std::string policy_id, int machines, double lead_time
 	const int ordering_cost_col = 5;
 	const int emergency_cost_col = 6;
 	const int max_batch_size_col = 7;
-	std::ifstream file("C:/Users/Root/Documents/ProBSPDCL/DCL_ProBSP/src/executables/exe_spare_parts/withdomain.csv");
+	std::ifstream file("/Users/naim/Library/CloudStorage/OneDrive-UGent/DCL Spare Batch/DCL_ProBSP/src/executables/exe_spare_parts/diff_lead_times.csv");
 	if (!file.is_open()) {
 		throw DynaPlex::Error("File open");
 	}
 	
 	std::string line, word;
     std::vector<std::vector<std::string>> data;
+
+	if (lead_time=="geometric")
+	{
+		lead_time = "geometric-" + std::to_string(lead_time_p);
+	}
+	
 
 	while (std::getline(file, line)) 
     {
@@ -203,7 +264,7 @@ bool check_experiment_done(std::string policy_id, int machines, double lead_time
 		{
 			std::string policy = row[policy_col];
 			int m = stoi(row[machine_col]);
-			double lt = stod(row[lead_time_col]);
+			std::string lt = row[lead_time_col];
 			int mt = stoi(row[mttf_col]);
 			int aa = stoi(row[a_col]);
 			double oc = stod(row[ordering_cost_col]);
@@ -235,7 +296,7 @@ int read_bsp_n(int machines, double lead_time, double mttf, double a,
 	const int n_col = 8;
 
 	int n = 0;
-	std::ifstream file("C:/Users/Root/Documents/ProBSPDCL/DCL_ProBSP/src/executables/exe_spare_parts/params.csv");
+	std::ifstream file("/Users/naim/Library/CloudStorage/OneDrive-UGent/DCL Spare Batch/DCL_ProBSP/src/executables/exe_spare_parts/params.csv");
 	if (!file.is_open()) {
 		throw DynaPlex::Error("File open");
 	}
@@ -276,7 +337,7 @@ int read_bsp_n(int machines, double lead_time, double mttf, double a,
 	return 0;
 }
 
-int read_probsp_n(int machines, double lead_time, double mttf, double a, 
+int read_probsp_n(int machines, std::string lead_time, double mttf, double a, 
 	double ordering_cost, double emergency_cost, int max_batch_size)
 	{
 	const int policy_col = 0;
@@ -290,7 +351,118 @@ int read_probsp_n(int machines, double lead_time, double mttf, double a,
 	const int n_col = 8;
 
 	int n = 0;
-	std::ifstream file("C:/Users/Root/Documents/ProBSPDCL/DCL_ProBSP/src/executables/exe_spare_parts/params.csv");
+	std::ifstream file("/Users/naim/Library/CloudStorage/OneDrive-UGent/DCL Spare Batch/DCL_ProBSP/src/executables/exe_spare_parts/params_lead_times.csv");
+	if (!file.is_open()) {
+		throw DynaPlex::Error("File open");
+	}
+	
+	std::string line, word;
+    std::vector<std::vector<std::string>> data;
+
+	while (std::getline(file, line)) 
+    {
+        std::stringstream ss(line);
+        std::vector<std::string> row;
+        
+        // Split the line by commas
+        while (std::getline(ss, word, ',')) {
+            row.push_back(word);  // Store each word in the row
+        }
+		if (!(row[machine_col] == "machines"))
+		{
+			std::string policy = row[policy_col];
+			if (policy == "probsp")
+			{
+				int m = stoi(row[machine_col]);
+				std::string lt = row[lead_time_col];
+				int mt = stoi(row[mttf_col]);
+				int aa = stoi(row[a_col]);
+				double oc = stod(row[ordering_cost_col]);
+				double ec = stod(row[emergency_cost_col]);
+				int mb = stoi(row[max_batch_size_col]);
+				int n = stoi(row[n_col]);
+				if (m == machines && lt == lead_time && mt == mttf && aa == a && 
+					oc == ordering_cost && ec == emergency_cost && mb == max_batch_size)
+				{
+					return n;
+				}
+			}
+		}
+	}
+	return 0;
+}
+
+int read_probsp_xo(int machines, std::string lead_time, double mttf, double a, 
+	double ordering_cost, double emergency_cost, int max_batch_size)
+	{
+	const int policy_col = 0;
+	const int machine_col = 1;
+	const int lead_time_col = 2;
+	const int mttf_col = 3;
+	const int a_col = 4;
+	const int ordering_cost_col = 5;
+	const int emergency_cost_col = 6;
+	const int max_batch_size_col = 7;
+	const int xo_col = 9;
+
+	double xo = 50;
+	std::ifstream file("/Users/naim/Library/CloudStorage/OneDrive-UGent/DCL Spare Batch/DCL_ProBSP/src/executables/exe_spare_parts/params_lead_times.csv");
+	if (!file.is_open()) {
+		throw DynaPlex::Error("File open");
+	}
+	
+	std::string line, word;
+    std::vector<std::vector<std::string>> data;
+
+	while (std::getline(file, line)) 
+    {
+        std::stringstream ss(line);
+        std::vector<std::string> row;
+        
+        // Split the line by commas
+        while (std::getline(ss, word, ',')) {
+            row.push_back(word);  // Store each word in the row
+        }
+		if (!(row[machine_col] == "machines"))
+		{
+			std::string policy = row[policy_col];
+			if (policy == "probsp")
+			{
+				int m = stoi(row[machine_col]);
+				std::string lt = row[lead_time_col];
+				int mt = stoi(row[mttf_col]);
+				int aa = stoi(row[a_col]);
+				double oc = stod(row[ordering_cost_col]);
+				double ec = stod(row[emergency_cost_col]);
+				int mb = stoi(row[max_batch_size_col]);
+				xo = stod(row[xo_col]);
+				if (m == machines && lt == lead_time && mt == mttf && aa == a && 
+					oc == ordering_cost && ec == emergency_cost && mb == max_batch_size)
+				{
+					return xo;
+				}
+			}
+		}
+	}
+	return 0;
+}
+
+
+int read_probsp_n_geometric(int machines, double lead_time_p, double mttf, double a, 
+	double ordering_cost, double emergency_cost, int max_batch_size)
+	{
+	const int policy_col = 0;
+	const int machine_col = 1;
+	const int lead_time_col = 2;
+	const int mttf_col = 3;
+	const int a_col = 4;
+	const int ordering_cost_col = 5;
+	const int emergency_cost_col = 6;
+	const int max_batch_size_col = 7;
+	const int n_col = 8;
+
+	int n = 0;
+	std::ifstream file("/Users/naim/Library/CloudStorage/OneDrive-UGent/DCL Spare Batch/DCL_ProBSP/src/executables/exe_spare_parts/params.csv");
 	if (!file.is_open()) {
 		throw DynaPlex::Error("File open");
 	}
@@ -320,7 +492,7 @@ int read_probsp_n(int machines, double lead_time, double mttf, double a,
 				double ec = stod(row[emergency_cost_col]);
 				int mb = stoi(row[max_batch_size_col]);
 				int n = stoi(row[n_col]);
-				if (m == machines && lt == lead_time && mt == mttf && aa == a && 
+				if (m == machines && lt == lead_time_p && mt == mttf && aa == a && 
 					oc == ordering_cost && ec == emergency_cost && mb == max_batch_size)
 				{
 					return n;
@@ -331,7 +503,7 @@ int read_probsp_n(int machines, double lead_time, double mttf, double a,
 	return 0;
 }
 
-int read_probsp_xo(int machines, double lead_time, double mttf, double a, 
+int read_probsp_xo_geometric(int machines, double lead_time_p, double mttf, double a, 
 	double ordering_cost, double emergency_cost, int max_batch_size)
 	{
 	const int policy_col = 0;
@@ -345,7 +517,7 @@ int read_probsp_xo(int machines, double lead_time, double mttf, double a,
 	const int xo_col = 9;
 
 	double xo = 50;
-	std::ifstream file("C:/Users/Root/Documents/ProBSPDCL/DCL_ProBSP/src/executables/exe_spare_parts/params.csv");
+	std::ifstream file("/Users/naim/Library/CloudStorage/OneDrive-UGent/DCL Spare Batch/DCL_ProBSP/src/executables/exe_spare_parts/params.csv");
 	if (!file.is_open()) {
 		throw DynaPlex::Error("File open");
 	}
@@ -375,7 +547,7 @@ int read_probsp_xo(int machines, double lead_time, double mttf, double a,
 				double ec = stod(row[emergency_cost_col]);
 				int mb = stoi(row[max_batch_size_col]);
 				xo = stod(row[xo_col]);
-				if (m == machines && lt == lead_time && mt == mttf && aa == a && 
+				if (m == machines && lt == lead_time_p && mt == mttf && aa == a && 
 					oc == ordering_cost && ec == emergency_cost && mb == max_batch_size)
 				{
 					return xo;
@@ -386,22 +558,24 @@ int read_probsp_xo(int machines, double lead_time, double mttf, double a,
 	return 0;
 }
 
-int main() {
-	std::vector<int> machines_vec= {1, 2, 5, 10};
-	std::vector<double> lead_time_vec = {0.2, 0.5};
-	std::vector<double> mttf_vec = {5, 10, 20};
-	std::vector<double> emergency_cost_vec = {5, 10};
-	std::vector<int> batch_size_vec = {3, 5};
-	std::vector<std::string> policies_vec = {"bsp", "probsp"};
+int main()
+{
+	std::vector<int> machines_vec= {30};
+	std::vector<std::string> lead_time_vec = {"geometric"};
+	std::vector<double> mttf_vec = {5,10,20};
+	std::vector<double> emergency_cost_vec = {5,10};
+	std::vector<int> batch_size_vec = {5,3};
+	std::vector<std::string> policies_vec = {"probsp", "bsp"};
 
 	double a = 1;
 	double ordering_cost = 2;
+	double lead_time_p = 0.5;
 	int n = 0; 
 	double xo = 0;
 	bool sort_degradation = true;
 
 	for (int machines : machines_vec) {
-		for (double lead_time : lead_time_vec) {
+		for (std::string lead_time : lead_time_vec) {
 			for (double mttf : mttf_vec) {
 				for (double emergency_cost : emergency_cost_vec) {
 					for (int batch_size : batch_size_vec) {
@@ -409,16 +583,31 @@ int main() {
 						{
 							if (policy_id == "probsp")
 							{
-								n = read_probsp_n(machines, lead_time, mttf, a, ordering_cost, emergency_cost, batch_size);
-								xo = read_probsp_xo(machines, lead_time, mttf, a, ordering_cost, emergency_cost, batch_size);
+								if (lead_time == "geometric")
+								{
+									n = read_probsp_n_geometric(machines, lead_time_p, mttf, a, ordering_cost, emergency_cost, batch_size);
+									xo = read_probsp_xo_geometric(machines, lead_time_p, mttf, a, ordering_cost, emergency_cost, batch_size);
+									if (n==0 && xo ==0)
+									{
+										throw DynaPlex::Error("Failed to retrive N and Xo");
+										abort();
+									}
+									
+								}
+								else
+								{
+									n = read_probsp_n(machines, lead_time, mttf, a, ordering_cost, emergency_cost, batch_size);
+									xo = read_probsp_xo(machines, lead_time, mttf, a, ordering_cost, emergency_cost, batch_size);
+								}
 							}
-							else if (policy_id == "BaseStockPolicy")
+							else if (policy_id == "bsp")
 							{
-								n = read_bsp_n(machines, lead_time, mttf, a, ordering_cost, emergency_cost, batch_size);
-								xo = 0; // BaseStockPolicy does not use xo
+								n = read_bsp_n(machines, lead_time_p, mttf, a, ordering_cost,emergency_cost,batch_size);
 							}
+							
+							std::cout << "running problem with lead time: " << lead_time << std::endl;
 							if (check_experiment_done(policy_id, machines, lead_time, mttf, a, ordering_cost, 
-								emergency_cost, batch_size))
+								emergency_cost, batch_size, lead_time_p))
 							{
 								std::cout << "Experiment already done for M=" << machines << ", L=" << lead_time
 									<< ", MTTF=" << mttf << ", a=" << a << ", OC=" << ordering_cost 
@@ -427,7 +616,7 @@ int main() {
 							else
 							{
 								run_experiment(machines, lead_time, a, mttf, ordering_cost, emergency_cost, batch_size,
-									sort_degradation, policy_id, n, xo);
+									sort_degradation, policy_id, n, xo, lead_time_p);
 							}
 						}
 					}
@@ -435,7 +624,60 @@ int main() {
 			}
 		}
 	}
+
 }
+
+
+// int main() {
+// 	std::vector<int> machines_vec= {50, 100};
+// 	std::vector<double> lead_time_vec = {0.2, 0.5};
+// 	std::vector<double> mttf_vec = {5, 10, 20};
+// 	std::vector<double> emergency_cost_vec = {10};
+// 	std::vector<int> batch_size_vec = {5, 10};
+// 	std::vector<std::string> policies_vec = {"probsp"};
+
+// 	double a = 1;
+// 	double ordering_cost = 2;
+// 	int n = 0; 
+// 	double xo = 0;
+// 	bool sort_degradation = true;
+
+// 	for (int machines : machines_vec) {
+// 		for (double lead_time : lead_time_vec) {
+// 			for (double mttf : mttf_vec) {
+// 				for (double emergency_cost : emergency_cost_vec) {
+// 					for (int batch_size : batch_size_vec) {
+// 						for (const std::string& policy_id : policies_vec)
+// 						{
+// 							if (policy_id == "probsp")
+// 							{
+// 								n = read_probsp_n(machines, lead_time, mttf, a, ordering_cost, emergency_cost, batch_size);
+// 								xo = read_probsp_xo(machines, lead_time, mttf, a, ordering_cost, emergency_cost, batch_size);
+// 							}
+// 							else if (policy_id == "bsp")
+// 							{
+// 								n = read_bsp_n(machines, lead_time, mttf, a, ordering_cost, emergency_cost, batch_size);
+// 								xo = 0; // BaseStockPolicy does not use xo
+// 							}
+// 							if (check_experiment_done(policy_id, machines, lead_time, mttf, a, ordering_cost, 
+// 								emergency_cost, batch_size))
+// 							{
+// 								std::cout << "Experiment already done for M=" << machines << ", L=" << lead_time
+// 									<< ", MTTF=" << mttf << ", a=" << a << ", OC=" << ordering_cost 
+// 									<< ", EC=" << emergency_cost << ", BS=" << batch_size << ", Policy=" << policy_id << std::endl;
+// 							}
+// 							else
+// 							{
+// 								run_experiment(machines, lead_time, a, mttf, ordering_cost, emergency_cost, batch_size,
+// 									sort_degradation, policy_id, n, xo);
+// 							}
+// 						}
+// 					}
+// 				}
+// 			}
+// 		}
+// 	}
+// }
 
 
 

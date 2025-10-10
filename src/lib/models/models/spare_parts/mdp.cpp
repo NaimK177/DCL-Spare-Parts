@@ -24,65 +24,114 @@ namespace DynaPlex::Models {
 			// do not forget to update state.cat. 
 			double costs = 0;
 
-			// receive incoming spare parts after action receival
-			int64_t ArrivedSpareParts = 0;
-			for (size_t i = 0; i < number_machines; ++i)
+			// Update the remaining time of the last added order
+			for (size_t i = 0; i < number_machines; i++)
 			{
-				ArrivedSpareParts += event.arrivals_array[i] * state.outstanding_orders[i];
-				if (event.arrivals_array[i] == 1 && state.outstanding_orders[i] > 0)
+				if (state.outstanding_orders[i] > 0 && state.remaining_time_orders[i] == -2)
 				{
-					state.outstanding_orders[i] = 0; // reduce outstanding orders by one
-				}
-			}
-			
-			state.inventory_level = state.inventory_level + ArrivedSpareParts;
-			state.outstanding_parts -= ArrivedSpareParts; // reduce outstanding parts by the number of arrived spare parts
-
-			for (size_t i = 0; i < number_machines; ++i)
-			{
-				state.degradation[i] = state.degradation[i] + event.Increments[i];
-			}
-			
-			// perform maintenance where necessary
-			for (size_t i = 0; i < number_machines; ++i)
-			{
-				if (state.degradation[i] >= 100)
-				{
-					state.degradation[i] = 0; // reset degradation to 0
-					if (state.inventory_level > 0)
+					if (event.arrival_time > 5)
 					{
-						state.inventory_level -= 1; // reduce inventory level by one
-					}
-					else if (state.outstanding_parts > 0)
-					{
-						state.outstanding_parts -= 1; // reduce outstanding parts by one
-						for (size_t j = 0; j < number_machines; ++j)
-						{
-							if (state.outstanding_orders[j] > 0)
-							{
-								state.outstanding_orders[j] -= 1; // reduce outstanding orders by one
-							}
-						}
-						costs += emergency_cost;
+						state.remaining_time_orders[i] = 5;
 					}
 					else
 					{
-						// incur emergency cost if no inventory or outstanding orders are available
-						costs += emergency_cost + ordering_cost;
+						state.remaining_time_orders[i] = event.arrival_time;
 					}
+					break;
+				}
+				
+			}
+
+			// Receive spare parts from orders if the remaining time =0, otherwise reduce the remaining time
+			int64_t ArrivedSpareParts = 0;
+			for (size_t i = 0; i < number_machines; i++)
+			{
+				if (state.remaining_time_orders[i] == 0)
+				{
+					ArrivedSpareParts += state.outstanding_orders[i];
+					state.remaining_time_orders[i] = -1;
+				}
+				else if (state.remaining_time_orders[i] > 0 && state.outstanding_orders[i] > 0)
+				{
+					state.remaining_time_orders[i] -= 1;
+				}
+			}
+			
+
+			// Update Inventory and outstanding parts levels
+			state.inventory_level += ArrivedSpareParts;
+			state.outstanding_parts -= ArrivedSpareParts;
+
+			// Increment Degradation of all machines
+			for (size_t i = 0; i < number_machines; i++)
+			{
+				state.degradation[i] += event.Increments[i];
+			}
+			
+			// Perform maintenance, and compute required numbers of emergency orders
+			int64_t emergency_orders = 0;
+			
+			for (size_t i = 0; i < number_machines; i++)
+			{
+				if (state.degradation[i] > 100 && state.inventory_level > 0)
+				{
+					state.degradation[i] = 0;
+					state.inventory_level -= 1;
+				}
+				else if (state.degradation[i] > 100 && state.inventory_level == 0)
+				{
+					state.degradation[i] = 0;
+					emergency_orders += 1;
 				}
 			}
 
-			// update the outstanding orders vectors to reflect the arrivals and expedites using fifo expedition
-			std::vector<double> temp_outstanding_orders(number_machines, 0.0);
-			for (size_t i = 0; i < number_machines; ++i)
+			int r = emergency_orders;
+			// Perform emergency actions to expedite (and/or order) parts
+			if (emergency_orders > 0)
 			{
-				if (state.outstanding_orders[i] > 0)
+				if (state.outstanding_parts > 0)
 				{
-					temp_outstanding_orders[i] = state.outstanding_orders[i];
+					for (size_t i = 0; i < number_machines; i++)
+					{
+						if (state.outstanding_orders[i] > 0 && state.remaining_time_orders[i] > -1)
+						{
+							if (state.outstanding_orders[i] <= r)
+							{
+								r -= state.outstanding_orders[i];
+								state.outstanding_orders[i] = 0;
+								state.remaining_time_orders[i] = -1;
+							}
+							else
+							{
+								state.outstanding_orders[i] -= r;
+								r = 0;
+								break;
+							}
+						}
+					}
+				}
+				costs += emergency_orders * emergency_cost + r * ordering_cost;
+			}
+			state.outstanding_parts -= emergency_orders - r;
+			
+			// Fix outstanding orders array, and remaining time
+			//  an order with remaining time = 0, will arrive next step
+			//  an order with remaining time = -1, has arrived or expedited and needs not be there
+			std::vector<int64_t> temp_outstanding_orders(number_machines, 0);
+			std::vector<int64_t> temp_remaining_time(number_machines, -1);
+			int64_t new_index = 0;
+			for (size_t i = 0; i < number_machines; i++)
+			{
+				if (state.outstanding_orders[i] > 0 && state.remaining_time_orders[i] >= 0)
+				{
+					temp_outstanding_orders[new_index] = state.outstanding_orders[i];
+					temp_remaining_time[new_index] = state.remaining_time_orders[i];
+					new_index += 1;
 				}
 			}
+			
 			state.outstanding_orders = temp_outstanding_orders;
+			state.remaining_time_orders = temp_remaining_time;
 			
 			if (sort_degradation)
 			{
@@ -103,32 +152,26 @@ namespace DynaPlex::Models {
 		{
 			// throw DynaPlex::NotImplementedError();
 			//implement change to state. 
-			
-			// std::cout << "I=" << state.inventory_level << ", O=" << state.outstanding_orders << std::endl;
-			if (action < 0)
-			{
-				std::cout << "Got an action:" << action << " when I=" << state.inventory_level << ", and O=" << state.outstanding_parts << std::endl;
-				throw DynaPlex::Error("Model: Action cannot take negative values");
-			}
-			if (action + state.inventory_level + state.outstanding_parts > number_machines)
-			{
-				std::cout << "Got an action:" << action << " when I=" << state.inventory_level << ", and O=" << state.outstanding_parts << std::endl;
-				// action = 0;
-				// std::cout << "Action of ProBSP truncated because it violates the capacity constraints" << std::endl;
-				throw DynaPlex::Error("ModifyStateWIthAction: have too many outstanding parts");
-			}
+
 			// Update outstanding orders with the action
 			state.last_decision = action;
 			
 			state.outstanding_parts += action; // increase outstanding parts by the action
-			for (size_t i = 0; i < number_machines; ++i)
+			if (action > 0)
 			{
-				if (state.outstanding_orders[i] == 0)
+				for (size_t i = 0; i < number_machines; ++i)
 				{
-					state.outstanding_orders[i] = action; // set outstanding orders to the action
-					break; // only set the first available machine
+					if (state.outstanding_orders[i] == 0 && state.remaining_time_orders[i] == -1)
+					{
+						state.outstanding_orders[i] = action; // set outstanding orders to the action
+						state.remaining_time_orders[i] = -2;
+						break; // only set the first available machine
+					}
 				}
+			// NOTE: the time of arrival will be set in the ModifyStateWithEvent function
 			}
+			
+			
 
 			// std::cout << "State change to AwaitEvent " << std::endl;
 				
@@ -151,6 +194,7 @@ namespace DynaPlex::Models {
 			vars.Add("Degradations", degradation);
 			vars.Add("Inventory Level", inventory_level);
 			vars.Add("Outstanding Orders", outstanding_orders);
+			vars.Add("Remaining Time", remaining_time_orders);
 			vars.Add("Outstanding Parts", outstanding_parts);
 			vars.Add("Last Decision", last_decision);
 			vars.Add("number_machines", number_machines);
@@ -165,6 +209,7 @@ namespace DynaPlex::Models {
 			vars.Get("Degradations", state.degradation);
 			vars.Get("Inventory Level", state.inventory_level);
 			vars.Get("Outstanding Orders", state.outstanding_orders);
+			vars.Get("Remaining Time", state.remaining_time_orders);
 			vars.Get("Outstanding Parts", state.outstanding_parts);
 			vars.Get("Last Decision", state.last_decision);
 			vars.Get("number_machines", state.number_machines);
@@ -177,15 +222,18 @@ namespace DynaPlex::Models {
 
 			State state{};
 			state.degradation=std::vector<double> (number_machines);
-			state.outstanding_orders = std::vector<double> (number_machines);
-			//state.degradation.resize(number_machines);
-			//state.cat = StateCategory::AwaitEvent();//or AwaitAction(), depending on logic
+			state.outstanding_orders = std::vector<int64_t> (number_machines);
+			state.remaining_time_orders = std::vector<int64_t> (number_machines);
+			
+			// Initialize the state: degradation =0, orders =0, remaining time = -1
+
 			state.cat = StateCategory::AwaitAction();
 
 			for (size_t i = 0; i < number_machines; ++i)
 			{
 				state.degradation[i] = 0;
 				state.outstanding_orders[i] = 0; // initialize outstanding orders to 0
+				state.remaining_time_orders[i] = -1;
 			}
 			
 			// initialize inventory level and outstanding orders to 0
@@ -213,13 +261,29 @@ namespace DynaPlex::Models {
 			config.Get("max_batch_size", max_batch_size);
 			config.Get("sort_degradation", sort_degradation);
 			config.Get("emergency_cost", emergency_cost);
-			config.Get("lead_time_p", lead_time_p);
 			config.Get("degradation_mttf", degradation_mttf);
 			config.Get("degradation_a", degradation_a);
+			config.Get("geometric", geometric);
+			config.Get("lead_time_p", lead_time_p);
+			config.Get("uniform", uniform);
+			config.Get("empirical", empirical);
+			config.Get("deterministic", deterministic);
 
-			arrival_dist = DiscreteDist::GetCustomDist({1-lead_time_p, lead_time_p});
+			if (uniform)
+			{
+				arrival_dist = DiscreteDist::GetCustomDist({0.2,0.2,0.2,0.2,0.2}, 1);
+			}
+			else if (empirical)
+			{
+				arrival_dist = DiscreteDist::GetCustomDist({0.1, 0.2, 0.3, 0.3, 0.1}, 1);
+			}
+			else if (geometric)
+			{
+				arrival_dist = DiscreteDist::GetGeometricDistFromProb(lead_time_p);
+			}
 			
-			std::cout << "Running experiments, M=" <<  number_machines<<", p="<< lead_time_p << ", a=" << degradation_a << ", mttf=" << degradation_mttf << std::endl;
+			
+			std::cout << "Running experiments, M=" <<  number_machines << ", a=" << degradation_a << ", mttf=" << degradation_mttf << std::endl;
 
 		}
 
@@ -236,9 +300,23 @@ namespace DynaPlex::Models {
 			for (size_t i = 0; i < number_machines; i++)
 			{
 				temp.Increments[i] = gamma_dist(rng.gen());
-				temp.arrivals_array[i] = arrival_dist.GetSample(rng);
 			}
-
+			if (uniform || empirical)
+			{
+				temp.arrival_time = arrival_dist.GetSample(rng);
+			}
+			else if (geometric)
+			{
+				temp.arrival_time = arrival_dist.GetSample(rng) + 1;
+			}
+			else if (deterministic)
+			{
+				temp.arrival_time = 3;
+			}
+			else
+			{
+				throw DynaPlex::NotImplementedError("Couldn't get the arrival time");
+			}
 			return temp;
 			//throw DynaPlex::NotImplementedError();
 		}
@@ -270,6 +348,7 @@ namespace DynaPlex::Models {
 				"A base stock level policy");
 			registry.Register<ProBSP>("ProBSP",
 				"ProBSP");
+			registry.Register<RandomPolicy>("RandomPolicy", "decision taken randomly");
 		}
 
 		DynaPlex::StateCategory MDP::GetStateCategory(const State& state) const
