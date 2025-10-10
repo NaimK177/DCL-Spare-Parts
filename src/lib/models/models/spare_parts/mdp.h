@@ -26,7 +26,7 @@ namespace DynaPlex::Models {
 			bool geometric;
 			bool uniform;
 			bool deterministic;
-			bool empirical;
+			bool custom;
 			
 
 			//any other mdp variables go here:

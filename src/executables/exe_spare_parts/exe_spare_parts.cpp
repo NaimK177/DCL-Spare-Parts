@@ -16,7 +16,7 @@ void run_experiment(int machines, std::string lead_time, int a, double mttf, dou
 	std::ofstream file;
 	bool deterministic = false;
 	bool uniform = false;
-	bool empirical = false;
+	bool custom = false;
 	bool geometric = false;
 
 
@@ -28,11 +28,11 @@ void run_experiment(int machines, std::string lead_time, int a, double mttf, dou
 	{
 		deterministic = true;
 	}
-	else if (lead_time == "empirical")
+	else if (lead_time == "custom")
 	{
-		empirical = true;
+		custom = true;
 	}
-	else if ("geomtric")
+	else if ("geometric")
 	{
 		geometric = true;
 		if (lead_time_p > 1)
@@ -61,7 +61,7 @@ void run_experiment(int machines, std::string lead_time, int a, double mttf, dou
 	mdp_config.Add("sort_degradation", sort_degradation);
 	mdp_config.Add("deterministic", deterministic);
 	mdp_config.Add("uniform", uniform);
-	mdp_config.Add("empirical", empirical);
+	mdp_config.Add("custom", custom);
 	mdp_config.Add("geometric", geometric);
 	mdp_config.Add("lead_time_p", lead_time_p);
 
@@ -350,6 +350,12 @@ int read_probsp_n(int machines, std::string lead_time, double mttf, double a,
 	const int max_batch_size_col = 7;
 	const int n_col = 8;
 
+	if (lead_time == "custom")
+	{
+		lead_time = "empirical";
+	}
+	
+
 	int n = 0;
 	std::ifstream file("/Users/naim/Library/CloudStorage/OneDrive-UGent/DCL Spare Batch/DCL_ProBSP/src/executables/exe_spare_parts/params_lead_times.csv");
 	if (!file.is_open()) {
@@ -404,6 +410,11 @@ int read_probsp_xo(int machines, std::string lead_time, double mttf, double a,
 	const int emergency_cost_col = 6;
 	const int max_batch_size_col = 7;
 	const int xo_col = 9;
+
+	if (lead_time == "custom")
+		{
+			lead_time = "empirical";
+		}
 
 	double xo = 50;
 	std::ifstream file("/Users/naim/Library/CloudStorage/OneDrive-UGent/DCL Spare Batch/DCL_ProBSP/src/executables/exe_spare_parts/params_lead_times.csv");
@@ -460,6 +471,7 @@ int read_probsp_n_geometric(int machines, double lead_time_p, double mttf, doubl
 	const int emergency_cost_col = 6;
 	const int max_batch_size_col = 7;
 	const int n_col = 8;
+
 
 	int n = 0;
 	std::ifstream file("/Users/naim/Library/CloudStorage/OneDrive-UGent/DCL Spare Batch/DCL_ProBSP/src/executables/exe_spare_parts/params.csv");
@@ -558,75 +570,102 @@ int read_probsp_xo_geometric(int machines, double lead_time_p, double mttf, doub
 	return 0;
 }
 
+
+// This is used for running multiple instances 
+
+// int main()
+// {
+// 	std::vector<int> machines_vec= {30};
+// 	std::vector<std::string> lead_time_vec = {"uniform"};
+// 	std::vector<double> mttf_vec = {5,10,20};
+// 	std::vector<double> emergency_cost_vec = {5,10};
+// 	std::vector<int> batch_size_vec = {10};
+// 	std::vector<std::string> policies_vec = {"probsp"};
+
+// 	double a = 1;
+// 	double ordering_cost = 2;
+// 	double lead_time_p = 0.33333;
+// 	int n = 0; 
+// 	double xo = 0;
+// 	bool sort_degradation = true;
+
+// 	for (int machines : machines_vec) {
+// 		for (std::string lead_time : lead_time_vec) {
+// 			for (double mttf : mttf_vec) {
+// 				for (double emergency_cost : emergency_cost_vec) {
+// 					for (int batch_size : batch_size_vec) {
+// 						for (const std::string& policy_id : policies_vec)
+// 						{
+// 							if (policy_id == "probsp")
+// 							{
+// 								if (lead_time == "geometric")
+// 								{
+// 									n = read_probsp_n_geometric(machines, lead_time_p, mttf, a, ordering_cost, emergency_cost, batch_size);
+// 									xo = read_probsp_xo_geometric(machines, lead_time_p, mttf, a, ordering_cost, emergency_cost, batch_size);
+// 									if (n==0 && xo ==0)
+// 									{
+// 										throw DynaPlex::Error("Failed to retrive N and Xo");
+// 										abort();
+// 									}
+									
+// 								}
+// 								else
+// 								{
+// 									n = read_probsp_n(machines, lead_time, mttf, a, ordering_cost, emergency_cost, batch_size);
+// 									xo = read_probsp_xo(machines, lead_time, mttf, a, ordering_cost, emergency_cost, batch_size);
+// 								}
+// 							}
+// 							else if (policy_id == "bsp")
+// 							{
+// 								n = read_bsp_n(machines, lead_time_p, mttf, a, ordering_cost,emergency_cost,batch_size);
+// 							}
+							
+// 							std::cout << "running problem with lead time: " << lead_time << std::endl;
+// 							if (check_experiment_done(policy_id, machines, lead_time, mttf, a, ordering_cost, 
+// 								emergency_cost, batch_size, lead_time_p))
+// 							{
+// 								std::cout << "Experiment already done for M=" << machines << ", L=" << lead_time
+// 									<< ", MTTF=" << mttf << ", a=" << a << ", OC=" << ordering_cost 
+// 									<< ", EC=" << emergency_cost << ", BS=" << batch_size << ", Policy=" << policy_id << std::endl;
+// 							}
+// 							else
+// 							{
+// 								run_experiment(machines, lead_time, a, mttf, ordering_cost, emergency_cost, batch_size,
+// 									sort_degradation, policy_id, n, xo, lead_time_p);
+// 							}
+// 						}
+// 					}
+// 				}
+// 			}
+// 		}
+// 	}
+// }
+
+// lead_time are chosen between "custom", "geometric", "deterministic", and "uniform"
+// If a policy_id is chosen, be sure to add the corresponding parameters, otherwise the defaults are used
+
+// For analyzing the structure of the policies, find the corresponding folder in the IO_Dynaplex directory, and cope the 
+//  latest generation of the policy
+
 int main()
 {
-	std::vector<int> machines_vec= {30};
-	std::vector<std::string> lead_time_vec = {"geometric"};
-	std::vector<double> mttf_vec = {5,10,20};
-	std::vector<double> emergency_cost_vec = {5,10};
-	std::vector<int> batch_size_vec = {5,3};
-	std::vector<std::string> policies_vec = {"probsp", "bsp"};
-
+	int machines = 2;
+	std::string lead_time = "custom";
+	double lead_time_p = 0;
+	double mttf = 10;
 	double a = 1;
 	double ordering_cost = 2;
-	double lead_time_p = 0.5;
-	int n = 0; 
-	double xo = 0;
+	double emergency_cost = 5;
+	int batch_size = 5;
+	std::string policy_id = "probsp";
+	int n = 0;
+	double xo = 37.5;
 	bool sort_degradation = true;
-
-	for (int machines : machines_vec) {
-		for (std::string lead_time : lead_time_vec) {
-			for (double mttf : mttf_vec) {
-				for (double emergency_cost : emergency_cost_vec) {
-					for (int batch_size : batch_size_vec) {
-						for (const std::string& policy_id : policies_vec)
-						{
-							if (policy_id == "probsp")
-							{
-								if (lead_time == "geometric")
-								{
-									n = read_probsp_n_geometric(machines, lead_time_p, mttf, a, ordering_cost, emergency_cost, batch_size);
-									xo = read_probsp_xo_geometric(machines, lead_time_p, mttf, a, ordering_cost, emergency_cost, batch_size);
-									if (n==0 && xo ==0)
-									{
-										throw DynaPlex::Error("Failed to retrive N and Xo");
-										abort();
-									}
-									
-								}
-								else
-								{
-									n = read_probsp_n(machines, lead_time, mttf, a, ordering_cost, emergency_cost, batch_size);
-									xo = read_probsp_xo(machines, lead_time, mttf, a, ordering_cost, emergency_cost, batch_size);
-								}
-							}
-							else if (policy_id == "bsp")
-							{
-								n = read_bsp_n(machines, lead_time_p, mttf, a, ordering_cost,emergency_cost,batch_size);
-							}
-							
-							std::cout << "running problem with lead time: " << lead_time << std::endl;
-							if (check_experiment_done(policy_id, machines, lead_time, mttf, a, ordering_cost, 
-								emergency_cost, batch_size, lead_time_p))
-							{
-								std::cout << "Experiment already done for M=" << machines << ", L=" << lead_time
-									<< ", MTTF=" << mttf << ", a=" << a << ", OC=" << ordering_cost 
-									<< ", EC=" << emergency_cost << ", BS=" << batch_size << ", Policy=" << policy_id << std::endl;
-							}
-							else
-							{
-								run_experiment(machines, lead_time, a, mttf, ordering_cost, emergency_cost, batch_size,
-									sort_degradation, policy_id, n, xo, lead_time_p);
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-
+	run_experiment(machines, lead_time, a, mttf, ordering_cost, emergency_cost, batch_size,
+ 				   sort_degradation, policy_id, n, xo, lead_time_p);
 }
 
+// This is used for running multiple instances 
 
 // int main() {
 // 	std::vector<int> machines_vec= {50, 100};
@@ -677,31 +716,4 @@ int main()
 // 			}
 // 		}
 // 	}
-// }
-
-
-
-// int main() {
-//     std::vector<int> machines_vec        = {1, 5, 10, 30};
-//     std::vector<int> lead_time_vec       = {2};
-//     std::vector<int> a_vec               = {1, 2};
-//     std::vector<double> upsilon_alpha_vec= {0.25, 0.5, 1};
-
-
-//     for (int machines : machines_vec) {
-//         for (int lead_time : lead_time_vec) {
-//             for (int a : a_vec) {
-//                 for (double upsilon_alpha : upsilon_alpha_vec) {
-// 					double upsilon_beta = (100 * upsilon_alpha) / (10 * a - 0.5);
-// 					run_experiment(
-// 						machines,
-// 						lead_time,
-// 						a,
-// 						upsilon_alpha,
-// 						upsilon_beta
-// 						, 0, 0);
-//                 }
-//             }
-//         }
-//     }
 // }

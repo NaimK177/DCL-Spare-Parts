@@ -37,6 +37,7 @@ namespace DynaPlex::Models {
 					{
 						state.remaining_time_orders[i] = event.arrival_time;
 					}
+					state.remaining_time_orders[i] = event.arrival_time;
 					break;
 				}
 				
@@ -266,24 +267,32 @@ namespace DynaPlex::Models {
 			config.Get("geometric", geometric);
 			config.Get("lead_time_p", lead_time_p);
 			config.Get("uniform", uniform);
-			config.Get("empirical", empirical);
+			config.Get("custom", custom);
 			config.Get("deterministic", deterministic);
 
 			if (uniform)
 			{
 				arrival_dist = DiscreteDist::GetCustomDist({0.2,0.2,0.2,0.2,0.2}, 1);
+				std::cout << "Lead Time is Uniform "<< std::endl;
 			}
-			else if (empirical)
+			else if (custom)
 			{
-				arrival_dist = DiscreteDist::GetCustomDist({0.1, 0.2, 0.3, 0.3, 0.1}, 1);
+				arrival_dist = DiscreteDist::GetCustomDist({0.2, 0.1, 0.3, 0.3, 0.1}, 1);
+				std::cout << "Lead Time is custom {0.2, 0.1, 0.3, 0.3, 0.1}" << std::endl;
 			}
 			else if (geometric)
 			{
 				arrival_dist = DiscreteDist::GetGeometricDistFromProb(lead_time_p);
+				std::cout << "Lead Time is Geometric with Mean= " << 1/lead_time_p << std::endl;
+			}
+			else
+			{
+				std::cout << "Lead Time is Deterministic =" << 1/lead_time_p << std::endl;
 			}
 			
 			
 			std::cout << "Running experiments, M=" <<  number_machines << ", a=" << degradation_a << ", mttf=" << degradation_mttf << std::endl;
+			
 
 		}
 
@@ -301,7 +310,7 @@ namespace DynaPlex::Models {
 			{
 				temp.Increments[i] = gamma_dist(rng.gen());
 			}
-			if (uniform || empirical)
+			if (uniform || custom)
 			{
 				temp.arrival_time = arrival_dist.GetSample(rng);
 			}
@@ -311,7 +320,7 @@ namespace DynaPlex::Models {
 			}
 			else if (deterministic)
 			{
-				temp.arrival_time = 3;
+				temp.arrival_time = std::round((1)/lead_time_p);
 			}
 			else
 			{
