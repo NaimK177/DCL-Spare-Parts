@@ -29,14 +29,14 @@ namespace DynaPlex::Models {
 			{
 				if (state.outstanding_orders[i] > 0 && state.remaining_time_orders[i] == -2)
 				{
-					if (event.arrival_time > 5)
-					{
-						state.remaining_time_orders[i] = 5;
-					}
-					else
-					{
-						state.remaining_time_orders[i] = event.arrival_time;
-					}
+					// if (event.arrival_time > 5)
+					// {
+					// 	state.remaining_time_orders[i] = 5;
+					// }
+					// else
+					// {
+					// 	state.remaining_time_orders[i] = event.arrival_time;
+					// }
 					state.remaining_time_orders[i] = event.arrival_time;
 					break;
 				}
@@ -50,6 +50,7 @@ namespace DynaPlex::Models {
 				if (state.remaining_time_orders[i] == 0)
 				{
 					ArrivedSpareParts += state.outstanding_orders[i];
+					state.outstanding_orders[i] = 0;
 					state.remaining_time_orders[i] = -1;
 				}
 				else if (state.remaining_time_orders[i] > 0 && state.outstanding_orders[i] > 0)
@@ -58,10 +59,12 @@ namespace DynaPlex::Models {
 				}
 			}
 			
+			
 
 			// Update Inventory and outstanding parts levels
 			state.inventory_level += ArrivedSpareParts;
 			state.outstanding_parts -= ArrivedSpareParts;
+
 
 			// Increment Degradation of all machines
 			for (size_t i = 0; i < number_machines; i++)
@@ -99,12 +102,14 @@ namespace DynaPlex::Models {
 							if (state.outstanding_orders[i] <= r)
 							{
 								r -= state.outstanding_orders[i];
+								state.outstanding_parts -= state.outstanding_orders[i];
 								state.outstanding_orders[i] = 0;
 								state.remaining_time_orders[i] = -1;
 							}
 							else
 							{
 								state.outstanding_orders[i] -= r;
+								state.outstanding_parts -= r;
 								r = 0;
 								break;
 							}
@@ -113,7 +118,11 @@ namespace DynaPlex::Models {
 				}
 				costs += emergency_orders * emergency_cost + r * ordering_cost;
 			}
-			state.outstanding_parts -= emergency_orders - r;
+
+			
+
+
+			// state.outstanding_parts -= emergency_orders - r;
 			
 			// Fix outstanding orders array, and remaining time
 			//  an order with remaining time = 0, will arrive next step
@@ -175,7 +184,7 @@ namespace DynaPlex::Models {
 			
 
 			// std::cout << "State change to AwaitEvent " << std::endl;
-				
+
 			// do not forget to update state.cat. 
 			state.cat = StateCategory::AwaitEvent();
 			//returns costs. 
@@ -320,7 +329,7 @@ namespace DynaPlex::Models {
 			}
 			else if (deterministic)
 			{
-				temp.arrival_time = std::round((1)/lead_time_p);
+				temp.arrival_time = std::round(1/lead_time_p);
 			}
 			else
 			{
@@ -368,6 +377,11 @@ namespace DynaPlex::Models {
 
 		bool MDP::IsAllowedAction(const State& state, int64_t action) const {
 			//throw DynaPlex::NotImplementedError();
+			if (action == 0)
+			{
+				return true;
+			}
+			
 			int64_t remaining_capacity = number_machines - state.inventory_level - state.outstanding_parts;
 			if (remaining_capacity > max_batch_size)
 			{

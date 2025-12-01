@@ -462,6 +462,7 @@ int read_probsp_xo(int machines, std::string lead_time, double mttf, double a,
 int read_probsp_n_geometric(int machines, double lead_time_p, double mttf, double a, 
 	double ordering_cost, double emergency_cost, int max_batch_size)
 	{
+	std::cout << "Reading N for Geometric Distribution" << std::endl;
 	const int policy_col = 0;
 	const int machine_col = 1;
 	const int lead_time_col = 2;
@@ -518,6 +519,8 @@ int read_probsp_n_geometric(int machines, double lead_time_p, double mttf, doubl
 int read_probsp_xo_geometric(int machines, double lead_time_p, double mttf, double a, 
 	double ordering_cost, double emergency_cost, int max_batch_size)
 	{
+	std::cout << "Reading Xo for Geometric Distribution" << std::endl;
+
 	const int policy_col = 0;
 	const int machine_col = 1;
 	const int lead_time_col = 2;
@@ -571,15 +574,15 @@ int read_probsp_xo_geometric(int machines, double lead_time_p, double mttf, doub
 }
 
 
-// This is used for running multiple instances 
+// This is used for running multiple instances of lead times
 
 // int main()
 // {
-// 	std::vector<int> machines_vec= {30};
-// 	std::vector<std::string> lead_time_vec = {"uniform"};
-// 	std::vector<double> mttf_vec = {5,10,20};
-// 	std::vector<double> emergency_cost_vec = {5,10};
-// 	std::vector<int> batch_size_vec = {10};
+// 	std::vector<int> machines_vec= {5, 30};
+// 	std::vector<std::string> lead_time_vec = {"custom", "uniform", "deterministic"};
+// 	std::vector<double> mttf_vec = {5};
+// 	std::vector<double> emergency_cost_vec = {5, 10};
+// 	std::vector<int> batch_size_vec = {5};
 // 	std::vector<std::string> policies_vec = {"probsp"};
 
 // 	double a = 1;
@@ -621,18 +624,20 @@ int read_probsp_xo_geometric(int machines, double lead_time_p, double mttf, doub
 // 							}
 							
 // 							std::cout << "running problem with lead time: " << lead_time << std::endl;
-// 							if (check_experiment_done(policy_id, machines, lead_time, mttf, a, ordering_cost, 
-// 								emergency_cost, batch_size, lead_time_p))
-// 							{
-// 								std::cout << "Experiment already done for M=" << machines << ", L=" << lead_time
-// 									<< ", MTTF=" << mttf << ", a=" << a << ", OC=" << ordering_cost 
-// 									<< ", EC=" << emergency_cost << ", BS=" << batch_size << ", Policy=" << policy_id << std::endl;
-// 							}
-// 							else
-// 							{
-// 								run_experiment(machines, lead_time, a, mttf, ordering_cost, emergency_cost, batch_size,
+// 							// if (check_experiment_done(policy_id, machines, lead_time, mttf, a, ordering_cost, 
+// 							// 	emergency_cost, batch_size, lead_time_p))
+// 							// {
+// 							// 	std::cout << "Experiment already done for M=" << machines << ", L=" << lead_time
+// 							// 		<< ", MTTF=" << mttf << ", a=" << a << ", OC=" << ordering_cost 
+// 							// 		<< ", EC=" << emergency_cost << ", BS=" << batch_size << ", Policy=" << policy_id << std::endl;
+// 							// }
+// 							// else
+// 							// {
+// 							// 	run_experiment(machines, lead_time, a, mttf, ordering_cost, emergency_cost, batch_size,
+// 							// 		sort_degradation, policy_id, n, xo, lead_time_p);
+// 							// }
+// 							run_experiment(machines, lead_time, a, mttf, ordering_cost, emergency_cost, batch_size,
 // 									sort_degradation, policy_id, n, xo, lead_time_p);
-// 							}
 // 						}
 // 					}
 // 				}
@@ -649,9 +654,9 @@ int read_probsp_xo_geometric(int machines, double lead_time_p, double mttf, doub
 
 int main()
 {
-	int machines = 2;
-	std::string lead_time = "custom";
-	double lead_time_p = 0;
+	int machines = 30;
+	std::string lead_time = "deterministic";
+	double lead_time_p = 0.333;
 	double mttf = 10;
 	double a = 1;
 	double ordering_cost = 2;
@@ -659,7 +664,7 @@ int main()
 	int batch_size = 5;
 	std::string policy_id = "probsp";
 	int n = 0;
-	double xo = 37.5;
+	double xo = 51.25;
 	bool sort_degradation = true;
 	run_experiment(machines, lead_time, a, mttf, ordering_cost, emergency_cost, batch_size,
  				   sort_degradation, policy_id, n, xo, lead_time_p);
@@ -668,8 +673,8 @@ int main()
 // This is used for running multiple instances 
 
 // int main() {
-// 	std::vector<int> machines_vec= {50, 100};
-// 	std::vector<double> lead_time_vec = {0.2, 0.5};
+// 	std::vector<int> machines_vec= {30};
+// 	std::vector<double> lead_time_vec = {0.3333333};
 // 	std::vector<double> mttf_vec = {5, 10, 20};
 // 	std::vector<double> emergency_cost_vec = {10};
 // 	std::vector<int> batch_size_vec = {5, 10};
