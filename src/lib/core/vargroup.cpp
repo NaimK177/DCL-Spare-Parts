@@ -10,6 +10,7 @@
 #include "pybind11/pybind11.h"
 #include "vargroup/pybind11_json.h"
 #endif
+#include <sstream>
 
 namespace DynaPlex {
 
