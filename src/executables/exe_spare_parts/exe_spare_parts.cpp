@@ -209,8 +209,7 @@ void run_experiment(int machines, std::string lead_time, int a, double mttf, dou
 	
 
 	//machines,alpha,beta,lead_time_p,a,best_cost,last_cost,iterations,samples
-	
-	file.open("/src/executables/exe_spare_parts/diff_lead_times.csv", std::ios_base::app);
+	file.open("../../../src/executables/exe_spare_parts/dec_experiments.csv", std::ios_base::app);
 	file << policy_id <<"," << machines <<"," << lead_time << "," << mttf <<"," << a <<"," << ordering_cost <<","  << emergency_cost <<"," << max_batch_size  <<"," << sort_degradation <<","<< best_value << ',' << last_value << ','<< heur_value << "," << num_gens << ',' << samples <<"\n" ;
 	file.close();
 	std::cout << "========================Experiment Finished =============================" << std::endl;
@@ -237,7 +236,7 @@ bool check_experiment_done(std::string policy_id, int machines, std::string lead
 	const int ordering_cost_col = 5;
 	const int emergency_cost_col = 6;
 	const int max_batch_size_col = 7;
-	std::ifstream file("/src/executables/exe_spare_parts/diff_lead_times.csv");
+	std::ifstream file("../../../src/executables/exe_spare_parts/dec_experiment.csv");
 	if (!file.is_open()) {
 		throw DynaPlex::Error("File open");
 	}
@@ -297,7 +296,7 @@ int read_bsp_n(int machines, double lead_time, double mttf, double a,
 	const int n_col = 8;
 
 	int n = 0;
-	std::ifstream file("/src/executables/exe_spare_parts/params.csv");
+	std::ifstream file("../../../src/executables/exe_spare_parts/params.csv");
 	if (!file.is_open()) {
 		throw DynaPlex::Error("File open");
 	}
@@ -358,7 +357,7 @@ int read_probsp_n(int machines, std::string lead_time, double mttf, double a,
 	
 
 	int n = 0;
-	std::ifstream file("/src/executables/exe_spare_parts/params_lead_times.csv");
+	std::ifstream file("../../../src/executables/exe_spare_parts/params_lead_times.csv");
 	if (!file.is_open()) {
 		throw DynaPlex::Error("File open");
 	}
@@ -418,7 +417,7 @@ int read_probsp_xo(int machines, std::string lead_time, double mttf, double a,
 		}
 
 	double xo = 50;
-	std::ifstream file("/src/executables/exe_spare_parts/params_lead_times.csv");
+	std::ifstream file("../../../src/executables/exe_spare_parts/params_lead_times.csv");
 	if (!file.is_open()) {
 		throw DynaPlex::Error("File open");
 	}
@@ -476,7 +475,7 @@ int read_probsp_n_geometric(int machines, double lead_time_p, double mttf, doubl
 
 
 	int n = 0;
-	std::ifstream file("/src/executables/exe_spare_parts/params.csv");
+	std::ifstream file("../../../src/executables/exe_spare_parts/params.csv");
 	if (!file.is_open()) {
 		throw DynaPlex::Error("File open");
 	}
@@ -533,7 +532,7 @@ int read_probsp_xo_geometric(int machines, double lead_time_p, double mttf, doub
 	const int xo_col = 9;
 
 	double xo = 50;
-	std::ifstream file("/src/executables/exe_spare_parts/params.csv");
+	std::ifstream file("../../../src/executables/exe_spare_parts/params.csv");
 	if (!file.is_open()) {
 		throw DynaPlex::Error("File open");
 	}
@@ -655,17 +654,17 @@ int read_probsp_xo_geometric(int machines, double lead_time_p, double mttf, doub
 
 int main()
 {
-	int machines = 30;
-	std::string lead_time = "deterministic";
-	double lead_time_p = 0.333;
+	int machines = 1;
+	std::string lead_time = "geometric";
+	double lead_time_p = 0.2;
 	double mttf = 10;
 	double a = 1;
 	double ordering_cost = 2;
 	double emergency_cost = 5;
 	int batch_size = 5;
-	std::string policy_id = "probsp";
-	int n = 0;
-	double xo = 51.25;
+	std::string policy_id = "rand";
+	int n = 6;
+	double xo = 56.25;
 	bool sort_degradation = true;
 	run_experiment(machines, lead_time, a, mttf, ordering_cost, emergency_cost, batch_size,
  				   sort_degradation, policy_id, n, xo, lead_time_p);

@@ -1,79 +1,42 @@
-![Dynaplex logo](docs/source/assets/images/logo.png)
+# Degradation-aware Spare Parts management
 
-DynaPlex is a software library for solving Markov Decision Problems and similar models (POMDP, HMM) written primarily in C++20 with bindings for python. It supports 
-deep reinforcement learning, approximate dynamic programming, classical parameterized policies, and exact methods based on policy and value iteration. Models in DynaPlex are written in C++, and exposed via a generic and vectorized interface. 
+This repository provides the complete implementation, data, and simulation environment used to study the integration 
+of machine degradation information into spare parts ordering decisions under stochastic lead times and batch ordering 
+constraints.
 
-DynaPlex focuses on solving problems arising in Operations Management: Supply Chain, Transportation and Logistics, Manufacturing, etc. 
+This repository focuses on the implementation of the DCL algorithm.
+This repository is a clone of the original DCL implementation, where our framework is integrated within.
+The repository [Spare Parts Framework](https://github.com/NaimK177/SpareParts-Framework) on the other hands implement DQN and PPO 
+algorithms within our problem setting.
 
----
+## Overview
+Efficient spare parts management is essential for ensuring high availability and cost-effective maintenance 
+in industrial systems.
 
-## High-level overview of folder structure
+This repository introduces a framework for learning degradation aware policies that learns to order spare parts 
+in complex systems with **multiple machines**, **stochastic lead times**, and **batch ordering**.
 
-- **`LICENSES/`**: Contains the licenses to used libraries and packages.
-- **`bash/`**: Contains the files used for running on a Linux HPC.
-- **`cmake/`**: Contains support functionality for building with CMake. 
-- **`docs/`**: Contains the documentation.
-- **`python/`**: Contains example python scripts, that can be used after building the python bindings.
-- **`src/`**: Contains the main code base
-  - **`executables/`**: Contains all executables you can run (you can add additional executables yourself here, that use the library).
-  - **`extern/`**: Contains all external libraries used (e.g., googletest).
-  - **`lib/`**: Contains all algorithms and all MDP models, you can implement your MDP in src/lib/models/models.
-  - **`tests/`**: Contains all code for unit testing (supported by googletest).
+## Key Features
+* The MDP formulation is integrated in [mdp.cpp](src/lib/models/models/spare_parts/mdp.cpp)
+* Initial policies for the initialization of the DCL are in [policies.cpp](src/lib/models/models/spare_parts/policies.cpp)
+* The executable for solving and running instances of this MDP is [exe_spare_parts.cpp](src/executables/exe_spare_parts/exe_spare_parts.cpp).
+This file also contains sample function for calling single, multiple instances, and instances with different lead times.
 
----
+## Problem Description
+The environment models a system of multiple machines subject to degradation following a gamma process.
+When a machine fails, a spare part is required for replacement.
+Orders for parts can be placed in batches, and the lead time before delivery is stochastic (can be also deterministic).
+The objective is to minimize total long-run cost, consisting of:
+* Holding cost for keeping spare parts in inventory,
+* Ordering cost (fixed and variable components), and
+* Emergency cost when a failure occurs and no spare is available.
 
-## Cloning the Repository with Dependencies
+The agent (policy) observes:
+* The degradation states of all machines,
+* The inventory level and outstanding orders,
+and decides how many parts to order at each time step.
 
-When cloning the repository, it's essential to also download the required submodules:
-
-```bash
-git clone --recurse-submodules https://github.com/Dynaplex/DynaPlex.git
-```
-
-if you did not recurse submodules, or if you use other tools for cloning repos, please somehow ensure that submodules (especially googletest) are available. 
-
-### Prerequisites
-For defining new models, you will need:
-- **CMake**: Building is supported with a modern CMake version (>= 3.21), often supplied with modern C++ IDEs.
-
-For actually training models, you have two choices. Either go all c++, in which case you need to select C++ in the [PyTorch Installation Guide](https://pytorch.org/get-started/locally/) to download:
-- **LibTorch**: Tests were conducted with version 2.1.0.
-
-Alternatively, if you prefer to use python for training scripts:  
-- **Python Bindings**: With pybind11 - we provide an anaconda python/environment.yml that can be used to create appropriate environment for using those bindings. 
-
-In either case, you must provide a CMakeUserLists.txt in the root directory that provides the paths to the appropriate folders. An example (that you could copy to root where it will be ignored by git and by default invisible in some IDE) can be found in cmake/resources/CmakeUserPresets.txt
-
----
-
-
-
-## Documentation
-
-Complete documentation can be found on the website: https://dynaplex-documentation.readthedocs.io
-
----
-
-## Examples
-
-We provide several example implementations of MDPs, these can be found in [here](src/lib/models/models/). 
-
----
-
-## Contributing and Getting help
-
-We are very happy if you want to share your contributions to DynaPlex with the rest of the community.
-All contributions are submitted through GitHub Pull Requests. For all instructions see the docs/
-
-We are happy to discuss development and issues in the GitHub repository. Please open a new issue if you want to discuss something with us.
-When you find a bug: open a new issue in the repository, please include a short, self-contained code snippet that reproduces the problem.
-
----
-
-## Citing
-
-To do.
-
-## Algorithms
-
-The DCL algorithm is available, for an example usage see [here](src/executables/dcl_example/dcl_example.cpp). 
+When a maintenance is required and no spare parts are available, parts are expedited from the outstanding order pipeline.
+If the order pipeline is empty, parts are ordered and expedited. The current expedition procedure is a FIFO procedure,
+where parts are expedited first from the oldest order. 
+The flexibility of the framework allows other implementations.
